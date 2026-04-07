@@ -1,0 +1,71 @@
+{
+  "scenario_id": "easy_config_typo_001",
+  "task_id": "task_easy_3",
+  "difficulty": "easy",
+  "description": "Bad environment variable in auth-service causes a CrashLoopBackOff. Single root cause, no red herrings.",
+  "root_cause_service": "auth-service",
+  "root_cause_type": "config_error",
+  "correct_diagnosis": "config_error",
+  "correct_playbook": "rollback_config",
+  "correct_escalation_team": null,
+  "dependency_graph": {
+    "api-gateway": ["auth-service"],
+    "auth-service": ["postgres", "redis"],
+    "postgres": [],
+    "redis": []
+  },
+  "initial_alerts": [
+    {"id": "A1", "service": "auth-service", "severity": "critical", "timestamp": 6000, "message": "CrashLoopBackOff: auth-service restarting every 10s"},
+    {"id": "A2", "service": "api-gateway", "severity": "high",     "timestamp": 6012, "message": "100% 503 rate — auth-service unavailable"}
+  ],
+  "initial_logs": [
+    {"t": 5998, "service": "auth-service", "msg": "Loading config from environment", "level": "info"},
+    {"t": 5999, "service": "auth-service", "msg": "FATAL: env var JWT_SECRET not set or empty", "level": "fatal"},
+    {"t": 6000, "service": "auth-service", "msg": "Process exited with code 1. Container restarting.", "level": "fatal"},
+    {"t": 6012, "service": "api-gateway", "msg": "upstream connect error: auth-service:8080 — connection refused", "level": "error"}
+  ],
+  "initial_metrics": {
+    "auth_service_restarts": 4,
+    "auth_service_uptime_s": 0,
+    "api_gateway_503_rate_pct": 100.0,
+    "api_gateway_latency_ms": 0,
+    "postgres_connections": 5
+  },
+  "queryable_logs": {
+    "auth-service": [
+      {"t": 5995, "service": "auth-service", "msg": "Config reload triggered by deploy pipeline", "level": "info"},
+      {"t": 5998, "service": "auth-service", "msg": "Loading config from environment", "level": "info"},
+      {"t": 5999, "service": "auth-service", "msg": "FATAL: env var JWT_SECRET not set or empty — check deployment config", "level": "fatal"},
+      {"t": 6000, "service": "auth-service", "msg": "Process exited with code 1", "level": "fatal"},
+      {"t": 6010, "service": "auth-service", "msg": "Restart attempt 2: same env config, same crash", "level": "fatal"}
+    ],
+    "api-gateway": [
+      {"t": 6001, "service": "api-gateway", "msg": "Health check to auth-service: FAILED (refused)", "level": "warn"},
+      {"t": 6005, "service": "api-gateway", "msg": "Marking auth-service as DOWN in upstream pool", "level": "error"},
+      {"t": 6012, "service": "api-gateway", "msg": "No healthy upstreams — returning 503 to all clients", "level": "error"}
+    ],
+    "postgres": [
+      {"t": 5990, "service": "postgres", "msg": "LOG: checkpoint complete, wrote 0 buffers", "level": "info"},
+      {"t": 6000, "service": "postgres", "msg": "LOG: connection from auth-service closed unexpectedly", "level": "info"}
+    ],
+    "redis": [
+      {"t": 6000, "service": "redis", "msg": "Client disconnected: auth-service (crash)", "level": "info"}
+    ]
+  },
+  "queryable_metrics": {
+    "auth-service": {"restarts": 4, "uptime_s": 0, "cpu_usage": 0.0, "crash_reason": 1},
+    "api-gateway": {"503_rate_pct": 100.0, "latency_ms": 0.0, "rps": 0},
+    "postgres":    {"connections": 5, "query_time_ms": 20},
+    "redis":       {"connected_clients": 10, "memory_pct": 30.0}
+  },
+  "red_herrings": [],
+  "affected_services": ["auth-service", "api-gateway"],
+  "valid_prevention_steps": ["config_validation_ci", "staging_env_parity", "secret_rotation_check"],
+  "min_timeline_steps": 2,
+  "max_steps": 15,
+  "available_playbooks": [
+    "restart_redis", "scale_postgres_pool", "rollback_config",
+    "add_rate_limiting", "restart_message_queue", "flush_redis_cache",
+    "flush_logs", "renew_certificate"
+  ]
+}

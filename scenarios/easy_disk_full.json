@@ -1,0 +1,69 @@
+{
+  "scenario_id": "easy_disk_full_001",
+  "task_id": "task_easy_4",
+  "difficulty": "easy",
+  "description": "Log rotation misconfigured on api-gateway — disk 99% full, causing write errors and dropped requests.",
+  "root_cause_service": "api-gateway",
+  "root_cause_type": "disk_full",
+  "correct_diagnosis": "disk_full",
+  "correct_playbook": "flush_logs",
+  "correct_escalation_team": null,
+  "dependency_graph": {
+    "api-gateway": ["auth-service", "app-service"],
+    "auth-service": ["postgres"],
+    "app-service": ["postgres"],
+    "postgres": []
+  },
+  "initial_alerts": [
+    {"id": "A1", "service": "api-gateway", "severity": "critical", "timestamp": 7000, "message": "Disk usage at 99% — write I/O failing"},
+    {"id": "A2", "service": "api-gateway", "severity": "high",     "timestamp": 7003, "message": "Access log writes failing: No space left on device"}
+  ],
+  "initial_logs": [
+    {"t": 6990, "service": "api-gateway", "msg": "Log rotation: skipped (logrotate config missing compress directive)", "level": "warn"},
+    {"t": 6998, "service": "api-gateway", "msg": "Disk usage warning: /var/log 91% full", "level": "warn"},
+    {"t": 7000, "service": "api-gateway", "msg": "FATAL: write: no space left on device (/var/log/nginx/access.log)", "level": "fatal"},
+    {"t": 7003, "service": "api-gateway", "msg": "Dropping incoming requests — cannot write access log", "level": "error"}
+  ],
+  "initial_metrics": {
+    "api_gateway_disk_pct": 99.1,
+    "api_gateway_log_write_errors": 847,
+    "api_gateway_req_drop_rate_pct": 35.0,
+    "api_gateway_latency_ms": 2400,
+    "postgres_query_time_ms": 40
+  },
+  "queryable_logs": {
+    "api-gateway": [
+      {"t": 6900, "service": "api-gateway", "msg": "Log rotation ran: no files rotated (misconfigured)", "level": "warn"},
+      {"t": 6990, "service": "api-gateway", "msg": "Log rotation: skipped (logrotate config missing compress directive)", "level": "warn"},
+      {"t": 6998, "service": "api-gateway", "msg": "Disk usage: /var/log 91%", "level": "warn"},
+      {"t": 6999, "service": "api-gateway", "msg": "Disk usage: /var/log 97%", "level": "error"},
+      {"t": 7000, "service": "api-gateway", "msg": "FATAL: write: no space left on device", "level": "fatal"},
+      {"t": 7003, "service": "api-gateway", "msg": "Dropping requests — cannot write access log", "level": "error"}
+    ],
+    "auth-service": [
+      {"t": 7001, "service": "auth-service", "msg": "Request timeout from api-gateway upstream", "level": "warn"}
+    ],
+    "app-service": [
+      {"t": 7002, "service": "app-service", "msg": "Dropped connections from api-gateway", "level": "warn"}
+    ],
+    "postgres": [
+      {"t": 6980, "service": "postgres", "msg": "LOG: autovacuum: found 0 removable dead row versions", "level": "info"}
+    ]
+  },
+  "queryable_metrics": {
+    "api-gateway": {"disk_pct": 99.1, "log_write_errors": 847, "req_drop_rate_pct": 35.0, "latency_ms": 2400},
+    "auth-service": {"error_rate_pct": 5.0, "latency_ms": 300},
+    "app-service":  {"error_rate_pct": 5.0, "latency_ms": 310},
+    "postgres":     {"query_time_ms": 40, "connections": 18}
+  },
+  "red_herrings": [],
+  "affected_services": ["api-gateway"],
+  "valid_prevention_steps": ["log_rotation_config", "disk_usage_alert", "log_compression"],
+  "min_timeline_steps": 2,
+  "max_steps": 15,
+  "available_playbooks": [
+    "restart_redis", "scale_postgres_pool", "rollback_config",
+    "add_rate_limiting", "restart_message_queue", "flush_redis_cache",
+    "flush_logs", "renew_certificate"
+  ]
+}

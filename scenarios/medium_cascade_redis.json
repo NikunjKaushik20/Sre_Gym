@@ -1,0 +1,60 @@
+{
+  "scenario_id": "medium_cascade_redis_001",
+  "task_id": "task_medium_1",
+  "difficulty": "medium",
+  "description": "Redis memory leak causing upstream cascade failures.",
+  "root_cause_service": "redis",
+  "root_cause_type": "memory_leak",
+  "correct_diagnosis": "memory_leak",
+  "correct_playbook": "restart_redis",
+  "correct_escalation_team": null,
+  "dependency_graph": {
+    "api-gateway": ["auth-service"],
+    "auth-service": ["redis", "postgres"]
+  },
+  "initial_alerts": [
+    {"id": "A1", "service": "api-gateway", "severity": "critical", "timestamp": 2005, "message": "High 5xx error rate"},
+    {"id": "A2", "service": "auth-service", "severity": "high", "timestamp": 2002, "message": "High latency"},
+    {"id": "A3", "service": "redis", "severity": "medium", "timestamp": 2000, "message": "Memory warning"}
+  ],
+  "initial_logs": [
+    {"t": 2000, "service": "redis", "msg": "Memory usage critical", "level": "warn"},
+    {"t": 2002, "service": "auth-service", "msg": "Cache miss storm", "level": "warn"},
+    {"t": 2005, "service": "api-gateway", "msg": "Upstream timeout", "level": "error"}
+  ],
+  "initial_metrics": {
+    "api_gateway_error_rate": 0.2,
+    "redis_memory": 0.9
+  },
+  "queryable_logs": {
+    "redis": [
+      {"t": 1990, "service": "redis", "msg": "Memory growing", "level": "info"},
+      {"t": 2000, "service": "redis", "msg": "Memory usage critical", "level": "warn"}
+    ],
+    "auth-service": [
+      {"t": 2002, "service": "auth-service", "msg": "Cache miss storm, querying DB", "level": "warn"}
+    ],
+    "api-gateway": [
+      {"t": 2005, "service": "api-gateway", "msg": "Upstream timeout to auth-service", "level": "error"}
+    ],
+    "postgres": [
+      {"t": 1980, "service": "postgres", "msg": "Scheduled slow vacuum job started", "level": "info"}
+    ]
+  },
+  "queryable_metrics": {
+    "redis": {"memory": 0.99},
+    "auth-service": {"cpu": 0.9, "latency": 2.5},
+    "postgres": {"io_wait": 0.1}
+  },
+  "red_herrings": [
+    {"service": "postgres", "fake_symptom": "slow background job", "reason": "unrelated scheduled task"}
+  ],
+  "affected_services": ["redis", "auth-service", "api-gateway"],
+  "valid_prevention_steps": ["fix mem leak"],
+  "min_timeline_steps": 3,
+  "max_steps": 15,
+  "available_playbooks": [
+    "restart_redis", "scale_postgres_pool", "rollback_config",
+    "add_rate_limiting", "restart_message_queue", "flush_redis_cache"
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "scenario_id": "easy_redis_oom_001",
+  "task_id": "task_easy_1",
+  "difficulty": "easy",
+  "description": "Redis OOM crash causing api-gateway upstream timeouts. Single root cause, no red herrings.",
+  "root_cause_service": "redis",
+  "root_cause_type": "memory_leak",
+  "correct_diagnosis": "memory_leak",
+  "correct_playbook": "restart_redis",
+  "correct_escalation_team": null,
+  "dependency_graph": {
+    "api-gateway": ["auth-service", "redis"],
+    "auth-service": ["postgres"],
+    "redis": [],
+    "postgres": []
+  },
+  "initial_alerts": [
+    {"id": "A1", "service": "redis",       "severity": "critical", "timestamp": 1002, "message": "Redis memory usage at 97%. OOM imminent."},
+    {"id": "A2", "service": "api-gateway", "severity": "high",     "timestamp": 1005, "message": "Upstream timeout connecting to redis cache."}
+  ],
+  "initial_logs": [
+    {"t": 1001, "service": "redis",       "msg": "WARNING: memory usage approaching maxmemory limit", "level": "warn"},
+    {"t": 1002, "service": "redis",       "msg": "OOM killer invoked. Killed process redis-server to reclaim memory.", "level": "fatal"},
+    {"t": 1003, "service": "api-gateway", "msg": "upstream connect error or disconnect/reset before headers, upstream: redis:6379", "level": "error"},
+    {"t": 1005, "service": "api-gateway", "msg": "connection refused: redis:6379", "level": "error"}
+  ],
+  "initial_metrics": {
+    "redis_memory_pct": 97.2,
+    "redis_connected_clients": 0,
+    "api_latency_ms": 1850,
+    "api_error_rate_pct": 62.0,
+    "postgres_query_time_ms": 45
+  },
+  "queryable_logs": {
+    "redis": [
+      {"t": 1000, "service": "redis", "msg": "INFO: maxmemory-policy = noeviction", "level": "info"},
+      {"t": 1000, "service": "redis", "msg": "INFO: used_memory 3891MB / maxmemory 4000MB", "level": "info"},
+      {"t": 1001, "service": "redis", "msg": "WARNING: 97% memory used. Start saving to disk.", "level": "warn"},
+      {"t": 1001, "service": "redis", "msg": "WARNING: 97.2% memory — approaching maxmemory limit", "level": "warn"},
+      {"t": 1002, "service": "redis", "msg": "OOM killer invoked. Killed process redis-server.", "level": "fatal"}
+    ],
+    "api-gateway": [
+      {"t": 1003, "service": "api-gateway", "msg": "upstream connect error: redis:6379", "level": "error"},
+      {"t": 1004, "service": "api-gateway", "msg": "circuit breaker OPEN for redis upstream", "level": "warn"},
+      {"t": 1005, "service": "api-gateway", "msg": "connection refused: redis:6379 — redis down", "level": "error"}
+    ],
+    "auth-service": [
+      {"t": 1004, "service": "auth-service", "msg": "cache MISS: falling back to postgres for token validation", "level": "info"},
+      {"t": 1005, "service": "auth-service", "msg": "INFO: all auth requests handled without cache (degraded mode)", "level": "info"}
+    ],
+    "postgres": [
+      {"t": 1000, "service": "postgres", "msg": "LOG: checkpoint complete", "level": "info"},
+      {"t": 1003, "service": "postgres", "msg": "LOG: connection from auth-service (elevated load — cache miss fallback)", "level": "info"}
+    ]
+  },
+  "queryable_metrics": {
+    "redis":       {"redis_memory_pct": 97.2, "redis_used_memory_mb": 3891, "redis_maxmemory_mb": 4000, "connected_clients": 0},
+    "api-gateway": {"api_latency_ms": 1850, "api_error_rate_pct": 62.0, "api_rps": 420},
+    "auth-service":{"auth_cache_hit_rate": 0.0, "auth_latency_ms": 280, "auth_error_rate_pct": 0.0},
+    "postgres":    {"postgres_query_time_ms": 45, "pg_connections": 22, "pg_max_connections": 100}
+  },
+  "red_herrings": [],
+  "affected_services": ["redis", "api-gateway"],
+  "valid_prevention_steps": ["memory_limit_config", "redis_memory_alert", "redis_eviction_policy"],
+  "min_timeline_steps": 2,
+  "max_steps": 15,
+  "available_playbooks": [
+    "restart_redis", "scale_postgres_pool", "rollback_config",
+    "add_rate_limiting", "restart_message_queue", "flush_redis_cache",
+    "flush_logs", "renew_certificate"
+  ]
+}

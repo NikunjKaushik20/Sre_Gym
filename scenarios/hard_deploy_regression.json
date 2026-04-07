@@ -1,0 +1,84 @@
+{
+  "scenario_id": "hard_deploy_regression_001",
+  "task_id": "task_hard_3",
+  "difficulty": "hard",
+  "description": "New auth-service deploy regresses token validation — 100% 401s across all services. Redis shows elevated memory (retry storm bloat) and Postgres slow queries (retry pressure) — both are red herrings.",
+  "root_cause_service": "auth-service",
+  "root_cause_type": "deploy_regression",
+  "correct_diagnosis": "deploy_regression",
+  "correct_playbook": "rollback_config",
+  "correct_escalation_team": null,
+  "dependency_graph": {
+    "api-gateway": ["auth-service", "app-service"],
+    "auth-service": ["redis", "postgres"],
+    "app-service":  ["postgres"],
+    "redis": [],
+    "postgres": []
+  },
+  "initial_alerts": [
+    {"id": "A1", "service": "api-gateway",  "severity": "critical", "timestamp": 10015, "message": "100% 401 Unauthorized — all user requests rejected"},
+    {"id": "A2", "service": "auth-service", "severity": "critical", "timestamp": 10005, "message": "Token validation failure rate: 100% (regression in v2.3.1)"},
+    {"id": "A3", "service": "redis",        "severity": "high",     "timestamp": 10020, "message": "Memory at 85% — connection pool bloat from retry storms"},
+    {"id": "A4", "service": "postgres",     "severity": "medium",   "timestamp": 10025, "message": "Slow queries detected — retry pressure from auth-service"}
+  ],
+  "initial_logs": [
+    {"t": 10000, "service": "auth-service", "msg": "Deploy v2.3.1 applied. Restarting service.", "level": "info"},
+    {"t": 10002, "service": "auth-service", "msg": "Token validation: ERROR — KeyError in jwt_decode() at line 142", "level": "error"},
+    {"t": 10005, "service": "auth-service", "msg": "100% of validation attempts failing post-deploy", "level": "fatal"},
+    {"t": 10015, "service": "api-gateway",  "msg": "All auth requests returning 401 — auth-service regression", "level": "error"},
+    {"t": 10020, "service": "redis",        "msg": "Connection pool bloated from client retry loops", "level": "warn"},
+    {"t": 10025, "service": "postgres",     "msg": "Slow query: auth-service retrying token lookups under failure", "level": "warn"}
+  ],
+  "initial_metrics": {
+    "auth_service_401_rate_pct": 100.0,
+    "auth_service_deploy_version": 2.31,
+    "api_gateway_401_passthrough_pct": 100.0,
+    "redis_memory_pct": 85.0,
+    "postgres_query_time_ms": 320
+  },
+  "queryable_logs": {
+    "auth-service": [
+      {"t": 9999,  "service": "auth-service", "msg": "Pre-deploy health: OK on v2.3.0", "level": "info"},
+      {"t": 10000, "service": "auth-service", "msg": "Deploy pipeline: promoting v2.3.1 to production", "level": "info"},
+      {"t": 10001, "service": "auth-service", "msg": "Service start OK on v2.3.1", "level": "info"},
+      {"t": 10002, "service": "auth-service", "msg": "REGRESSION: KeyError in jwt_decode() — missing 'alg' field in token header", "level": "error"},
+      {"t": 10003, "service": "auth-service", "msg": "All subsequent token validations failing", "level": "fatal"},
+      {"t": 10005, "service": "auth-service", "msg": "401 rate: 100%. Deploy v2.3.1 is the cause.", "level": "fatal"}
+    ],
+    "api-gateway": [
+      {"t": 10010, "service": "api-gateway", "msg": "All upstream auth validations returning 401", "level": "error"},
+      {"t": 10015, "service": "api-gateway", "msg": "Passing 401s to clients — auth-service regression", "level": "error"}
+    ],
+    "redis": [
+      {"t": 10018, "service": "redis", "msg": "Connection pool growing from auth-service retry loop", "level": "warn"},
+      {"t": 10022, "service": "redis", "msg": "Memory at 85% — client retry storm accumulating connections", "level": "warn"}
+    ],
+    "postgres": [
+      {"t": 10024, "service": "postgres", "msg": "Slow query: auth-service issuing repeated token lookups under failure", "level": "warn"},
+      {"t": 10028, "service": "postgres", "msg": "Query queue growing under retry pressure (symptom of auth failure)", "level": "warn"}
+    ],
+    "app-service": [
+      {"t": 10016, "service": "app-service", "msg": "All requests rejected by api-gateway auth check", "level": "error"}
+    ]
+  },
+  "queryable_metrics": {
+    "auth-service": {"401_rate_pct": 100.0, "deploy_version": 2.31, "prev_version": 2.30, "deploy_timestamp": 10000},
+    "api-gateway":  {"401_passthrough_pct": 100.0, "rps": 410},
+    "redis":        {"memory_pct": 85.0, "connections": 780},
+    "postgres":     {"query_time_ms": 320, "connections": 88},
+    "app-service":  {"error_rate_pct": 100.0}
+  },
+  "red_herrings": [
+    {"service": "redis",    "fake_symptom": "memory at 85%", "reason": "connection pool bloat from retry storms caused by auth failure — symptom, not cause"},
+    {"service": "postgres", "fake_symptom": "slow queries",  "reason": "retry pressure from auth-service failure loop — downstream effect of the regression"}
+  ],
+  "affected_services": ["auth-service", "api-gateway", "app-service"],
+  "valid_prevention_steps": ["canary_deploy", "rollback_on_error_rate", "integration_test_auth"],
+  "min_timeline_steps": 3,
+  "max_steps": 15,
+  "available_playbooks": [
+    "restart_redis", "scale_postgres_pool", "rollback_config",
+    "add_rate_limiting", "restart_message_queue", "flush_redis_cache",
+    "flush_logs", "renew_certificate"
+  ]
+}

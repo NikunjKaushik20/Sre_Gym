@@ -1,0 +1,66 @@
+{
+  "scenario_id": "hard_config_cascade_001",
+  "task_id": "task_hard_1",
+  "difficulty": "hard",
+  "description": "Config deploy to auth-service causes memory leak, cache thrash, and rate limits.",
+  "root_cause_service": "auth-service",
+  "root_cause_type": "bad_config_deploy",
+  "correct_diagnosis": "bad_config_deploy",
+  "correct_playbook": "rollback_config",
+  "correct_escalation_team": null,
+  "dependency_graph": {
+    "api-gateway": ["auth-service"],
+    "auth-service": ["redis", "postgres"],
+    "app-service": ["postgres", "message-queue"]
+  },
+  "initial_alerts": [
+    {"id": "A1", "service": "api-gateway", "severity": "critical", "timestamp": 4010, "message": "Users seeing 503s"},
+    {"id": "A2", "service": "redis", "severity": "high", "timestamp": 4005, "message": "Cache eviction rate high"},
+    {"id": "A3", "service": "auth-service", "severity": "medium", "timestamp": 4002, "message": "Memory warning"}
+  ],
+  "initial_logs": [
+    {"t": 4000, "service": "auth-service", "msg": "Reloaded config from remote", "level": "info"},
+    {"t": 4002, "service": "auth-service", "msg": "Memory usage elevated", "level": "warn"},
+    {"t": 4005, "service": "redis", "msg": "Evicting keys due to maxmemory", "level": "warn"},
+    {"t": 4010, "service": "api-gateway", "msg": "Rate limiting triggered upstream", "level": "error"}
+  ],
+  "initial_metrics": {
+    "api_gateway_error_rate": 0.4,
+    "redis_evictions": 500
+  },
+  "queryable_logs": {
+    "auth-service": [
+      {"t": 4000, "service": "auth-service", "msg": "Reloaded config v42", "level": "info"},
+      {"t": 4002, "service": "auth-service", "msg": "Memory leak detected in new auth module", "level": "error"}
+    ],
+    "redis": [
+      {"t": 4005, "service": "redis", "msg": "Evicting keys due to maxmemory", "level": "warn"}
+    ],
+    "api-gateway": [
+      {"t": 4010, "service": "api-gateway", "msg": "Rate limiting triggered upstream", "level": "error"}
+    ],
+    "postgres": [
+      {"t": 3990, "service": "postgres", "msg": "Slow query log", "level": "info"}
+    ],
+    "message-queue": [
+      {"t": 3995, "service": "message-queue", "msg": "Brief lag in consumer", "level": "info"}
+    ]
+  },
+  "queryable_metrics": {
+    "auth-service": {"memory": 0.95},
+    "redis": {"evictions": 1000},
+    "postgres": {"connections": 50}
+  },
+  "red_herrings": [
+    {"service": "postgres", "fake_symptom": "slow query", "reason": "unrelated off-peak query"},
+    {"service": "message-queue", "fake_symptom": "brief lag", "reason": "normal jitter"}
+  ],
+  "affected_services": ["auth-service", "redis", "api-gateway"],
+  "valid_prevention_steps": ["test config in staging", "canary deploy"],
+  "min_timeline_steps": 3,
+  "max_steps": 15,
+  "available_playbooks": [
+    "restart_redis", "scale_postgres_pool", "rollback_config",
+    "add_rate_limiting", "restart_message_queue", "flush_redis_cache"
+  ]
+}
