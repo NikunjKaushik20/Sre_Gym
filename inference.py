@@ -97,12 +97,28 @@ TASKS = [
 ]
 
 
-# Ensure 'sre_gym' package is discoverable from parent directory
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# ── HTTP helpers (no local package dependency) ──
 
-from sre_gym.client import SREGymEnv
-from sre_gym.models import SREAction
+def reset_env(task_id: str) -> dict:
+    """POST /reset and return the raw JSON dict."""
+    resp = requests.post(
+        f"{ENV_URL}/reset",
+        json={"task_id": task_id},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def step_env(action_type: str, payload: dict) -> dict:
+    """POST /step and return the raw JSON dict."""
+    resp = requests.post(
+        f"{ENV_URL}/step",
+        json={"action_type": action_type, "payload": payload},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()
 
 def format_observation(obs):
     """Format observation as readable string for the LLM."""
@@ -154,10 +170,9 @@ def parse_action(response_text):
 def run_task(client, task_info):
     """Run a single task and return the TERMINAL reward only.
 
-    Critical change: intermediate step rewards are NOT summed into the final
-    score. Only the reward from the terminal action (submit_postmortem or
-    timeout) is returned. This prevents inflation from +0.15 diagnosis and
-    +0.25 remediation step signals.
+    Intermediate step rewards are NOT summed — only the terminal reward
+    (from submit_postmortem or timeout) counts toward the benchmark score.
+    Uses direct HTTP calls so inference.py is fully self-contained.
     """
     task_id = task_info["task_id"]
     task_name = task_info["name"]
@@ -166,56 +181,62 @@ def run_task(client, task_info):
     terminal_reward = 0.0
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-    with SREGymEnv(base_url=ENV_URL).sync() as env:
-        step_result = env.reset(task_id=task_id)
-        obs = step_result.observation.model_dump()
+    try:
+        result = reset_env(task_id)
+        obs = result.get("observation", {})
+    except Exception as e:
+        print(f"[END] task_id={task_id} terminal_reward=0.000 error=reset failed: {e}")
+        return 0.0
 
-        for step_num in range(1, 22):  # hard cap at 21 to cover hard (max_steps=20)
-            obs_text = format_observation(obs)
-            messages.append({"role": "user", "content": obs_text})
+    for step_num in range(1, 22):  # hard cap at 21 to cover hard (max_steps=20)
+        obs_text = format_observation(obs)
+        messages.append({"role": "user", "content": obs_text})
 
-            try:
-                response = client.chat.completions.create(
-                    model=MODEL_NAME,
-                    messages=messages,
-                    temperature=0.0,    # deterministic — no lucky rolls
-                    max_tokens=800,     # enough for full postmortem JSON
-                )
-                llm_output = response.choices[0].message.content
-                messages.append({"role": "assistant", "content": llm_output})
-            except Exception as e:
-                print(f"[STEP] step={step_num} error=LLM call failed: {e}")
-                break
-
-            try:
-                action_dict = parse_action(llm_output)
-            except Exception as e:
-                print(f"[STEP] step={step_num} error=Failed to parse JSON: {e}")
-                # Penalty: force a safe no-op rather than a lucky default
-                action_dict = {"action_type": "query_logs", "payload": {"service": "api-gateway"}}
-
-            try:
-                action_model = SREAction(**action_dict)
-            except Exception as e:
-                print(f"[STEP] step={step_num} error=Invalid action schema: {e}")
-                action_model = SREAction(action_type="query_logs", payload={"service": "api-gateway"})
-
-            step_result = env.step(action_model)
-            obs = step_result.observation.model_dump()
-            step_reward = step_result.reward
-            done = step_result.done
-
-            print(
-                f"[STEP] step={step_num} "
-                f"action={action_model.action_type} "
-                f"step_reward={step_reward:.3f} "
-                f"done={done}"
+        try:
+            response = client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=messages,
+                temperature=0.0,    # deterministic — no lucky rolls
+                max_tokens=800,     # enough for full postmortem JSON
             )
+            llm_output = response.choices[0].message.content
+            messages.append({"role": "assistant", "content": llm_output})
+        except Exception as e:
+            print(f"[STEP] step={step_num} error=LLM call failed: {e}")
+            break
 
-            if done:
-                # Only the TERMINAL reward counts toward benchmark score
-                terminal_reward = max(0.0, min(float(step_reward), 1.0))
-                break
+        try:
+            action_dict = parse_action(llm_output)
+        except Exception as e:
+            print(f"[STEP] step={step_num} error=Failed to parse JSON: {e}")
+            action_dict = {"action_type": "query_logs", "payload": {"service": "api-gateway"}}
+
+        action_type = action_dict.get("action_type", "query_logs")
+        payload = action_dict.get("payload", {})
+        if not isinstance(payload, dict):
+            payload = {}
+
+        try:
+            result = step_env(action_type, payload)
+        except Exception as e:
+            print(f"[STEP] step={step_num} error=Env step failed: {e}")
+            break
+
+        obs = result.get("observation", {})
+        step_reward = result.get("reward", 0.0)
+        done = result.get("done", False)
+
+        print(
+            f"[STEP] step={step_num} "
+            f"action={action_type} "
+            f"step_reward={step_reward:.3f} "
+            f"done={done}"
+        )
+
+        if done:
+            # Only the TERMINAL reward counts toward benchmark score
+            terminal_reward = max(0.0, min(float(step_reward), 1.0))
+            break
 
     print(f"[END] task_id={task_id} terminal_reward={round(terminal_reward, 3)}")
     return terminal_reward
