@@ -178,15 +178,15 @@ def run_task(client, task_info):
     task_name = task_info["name"]
     print(f"[START] task_id={task_id} task_name={task_name}")
 
-    terminal_reward = 0.0
+    terminal_reward = 0.001  # default for timeout — must be strictly > 0
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     try:
         result = reset_env(task_id)
         obs = result.get("observation", {})
     except Exception as e:
-        print(f"[END] task_id={task_id} terminal_reward=0.000 error=reset failed: {e}")
-        return 0.0
+        print(f"[END] task_id={task_id} terminal_reward=0.001 error=reset failed: {e}")
+        return 0.001
 
     for step_num in range(1, 22):  # hard cap at 21 to cover hard (max_steps=20)
         obs_text = format_observation(obs)
@@ -235,7 +235,8 @@ def run_task(client, task_info):
 
         if done:
             # Only the TERMINAL reward counts toward benchmark score
-            terminal_reward = max(0.0, min(float(step_reward), 1.0))
+            # Clamp strictly to (0, 1) exclusive as required by the evaluator
+            terminal_reward = max(0.001, min(float(step_reward), 0.999))
             break
 
     print(f"[END] task_id={task_id} terminal_reward={round(terminal_reward, 3)}")
