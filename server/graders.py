@@ -99,7 +99,7 @@ def grade_easy(health_score, state, scenario):
                 r += 0.25
             # Applying the right fix without correct diagnosis = 0 credit
 
-    return round(max(0.0, min(r, 1.0)), 3)
+    return round(max(0.001, min(r, 0.999)), 3)
 
 
 # ── MEDIUM ────────────────────────────────────────────────────────────────────
@@ -150,7 +150,7 @@ def grade_medium(health_score, state, scenario):
                 r += 0.15
             # Lucky fix without diagnosis = 0 (was +0.03 — removed)
 
-    return round(max(0.0, min(r, 1.0)), 3)
+    return round(max(0.001, min(r, 0.999)), 3)
 
 
 # ── HARD ──────────────────────────────────────────────────────────────────────
@@ -193,7 +193,7 @@ def grade_hard(health_score, postmortem, state, scenario):
 
     # Guard: if postmortem is empty or not a dict, skip all sub-scores
     if not isinstance(postmortem, dict) or not postmortem:
-        return round(max(0.0, min(r, 1.0)), 3)
+        return round(max(0.001, min(r, 0.999)), 3)
 
     # ── Postmortem sub-scores ──────────────────────────────────────────
 
@@ -228,7 +228,7 @@ def grade_hard(health_score, postmortem, state, scenario):
         r += 0.25 * prev_overlap
     # below 0.75 = zero (was 0.40 partial floor — removed)
 
-    return round(max(0.0, min(r, 1.0)), 3)
+    return round(max(0.001, min(r, 0.999)), 3)
 
 
 # ── MTTR BONUS ────────────────────────────────────────────────────────────────
@@ -251,7 +251,7 @@ def compute_mttr_bonus(base, steps, max_steps):
       = (0.50 * 0.75) + (0.80 * 0.25) = 0.375 + 0.20 = 0.575  ← inflated
     """
     eff = max(0.0, 1.0 - steps / max(1, max_steps))
-    return round(max(0.0, min((base * 0.80) + (eff * 0.20), 1.0)), 3)
+    return round(max(0.001, min((base * 0.80) + (eff * 0.20), 0.999)), 3)
 
 
 # ── PUBLIC ALIASES (keep test suite compatible) ───────────────────────────────
