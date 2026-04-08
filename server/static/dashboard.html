@@ -1,504 +1,1085 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SRE-Gym | Incident Command Center</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#f9fafb;--white:#ffffff;--border:#e5e7eb;--border2:#d1d5db;
-  --text:#111827;--text2:#6b7280;--text3:#9ca3af;
-  --green:#059669;--green-dark:#064e3b;--green-bg:#d1fae5;--green-light:#ecfdf5;
-  --red:#dc2626;--red-bg:#fee2e2;--yellow:#d97706;--yellow-bg:#fef3c7;
-  --blue:#2563eb;--blue-bg:#eff6ff;
-  --font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
-}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SRE-Gym | Incident Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
 
-/* NAV */
-nav{background:var(--white);border-bottom:1px solid var(--border);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.nav-left{display:flex;align-items:center;gap:2rem}
-.logo{font-size:.95rem;font-weight:700;letter-spacing:2px;color:var(--text)}
-.nav-links{display:flex;gap:.25rem}
-.nav-links a{color:var(--text2);text-decoration:none;font-size:.85rem;font-weight:500;padding:.4rem .75rem;border-radius:6px;transition:all .15s}
-.nav-links a:hover{color:var(--text);background:#f3f4f6}
-.nav-links a.active{color:var(--green);border-bottom:2px solid var(--green);border-radius:0;padding-bottom:.3rem}
-.nav-right{display:flex;align-items:center;gap:1rem}
-.search{display:flex;align-items:center;gap:.5rem;background:#f3f4f6;border:1px solid var(--border);border-radius:8px;padding:.35rem .75rem;font-size:.8rem;color:var(--text3);width:200px}
-.search svg{flex-shrink:0}
-.nav-icon{width:32px;height:32px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);border:1px solid var(--border)}
-.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--green),#10b981);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:white}
+    :root {
+      --bg: #f9fafb;
+      --white: #ffffff;
+      --border: #e5e7eb;
+      --border2: #d1d5db;
+      --text: #111827;
+      --text2: #6b7280;
+      --text3: #9ca3af;
+      --green: #059669;
+      --green-dark: #064e3b;
+      --green-bg: #d1fae5;
+      --green-light: #ecfdf5;
+      --red: #dc2626;
+      --red-bg: #fee2e2;
+      --yellow: #d97706;
+      --yellow-bg: #fef3c7;
+      --blue: #2563eb;
+      --blue-bg: #eff6ff;
+      --font: 'Inter', sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
 
-/* MAIN */
-main{max-width:1100px;margin:0 auto;padding:2rem 2rem 4rem}
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh
+    }
 
-/* HERO */
-.breadcrumb{font-size:.7rem;font-weight:600;letter-spacing:1.5px;color:var(--green);text-transform:uppercase;margin-bottom:1.25rem}
-.hero-title{font-size:2.6rem;font-weight:800;line-height:1.1;margin-bottom:1rem;color:var(--text);max-width:520px}
-.hero-desc{color:var(--text2);font-size:.9rem;line-height:1.7;max-width:480px;margin-bottom:1.5rem}
-.tag-row{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:2.5rem}
-.tag{font-size:.7rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;border:1px solid var(--border2);border-radius:6px;padding:.3rem .7rem;color:var(--text2);background:var(--white)}
+    /* NAV */
+    nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100
+    }
 
-/* STATS */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2.5rem}
-.stat-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem}
-.stat-card.highlight{background:var(--green-dark);border-color:var(--green-dark);color:white}
-.stat-label{font-size:.68rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:.5rem}
-.stat-card.highlight .stat-label{color:rgba(255,255,255,0.65)}
-.stat-num{font-size:2rem;font-weight:800;color:var(--text);line-height:1}
-.stat-card.highlight .stat-num{color:white}
-.stat-sub{margin-top:.5rem;font-size:.75rem;color:var(--text3);display:flex;align-items:center;gap:.3rem}
-.stat-card.highlight .stat-sub{color:rgba(255,255,255,0.6)}
-.stat-badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.7rem;font-weight:600;padding:.15rem .5rem;border-radius:4px}
-.badge-green{background:var(--green-bg);color:var(--green)}
-.badge-yellow{background:var(--yellow-bg);color:var(--yellow)}
-.badge-red{background:var(--red-bg);color:var(--red)}
-.badge-green-inv{background:rgba(255,255,255,0.2);color:white}
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 2rem
+    }
 
-/* SECTION HEADER */
-.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
-.section-title{font-size:1.2rem;font-weight:700;color:var(--text)}
-.section-tag{font-size:.68rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border:1px solid var(--border);border-radius:6px;padding:.25rem .6rem}
+    .logo {
+      font-size: .95rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--text)
+    }
 
-/* TOPOLOGY */
-.topo-box{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:0;overflow:hidden;margin-bottom:2.5rem}
-#topoCanvas{width:100%;height:320px;display:block}
+    .nav-links {
+      display: flex;
+      gap: .25rem
+    }
 
-/* FEATURES */
-.features{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2.5rem}
-.feature{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:border-color .2s,box-shadow .2s}
-.feature:hover{border-color:var(--green);box-shadow:0 4px 12px rgba(5,150,105,0.08)}
-.feat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:1rem}
-.feat-icon.g{background:var(--green-light)}
-.feat-icon.r{background:var(--red-bg)}
-.feat-icon.b{background:var(--blue-bg)}
-.feat-icon.y{background:var(--yellow-bg)}
-.feature h3{font-size:.9rem;font-weight:600;margin-bottom:.4rem;color:var(--text)}
-.feature p{font-size:.8rem;color:var(--text2);line-height:1.6}
+    .nav-links a {
+      color: var(--text2);
+      text-decoration: none;
+      font-size: .85rem;
+      font-weight: 500;
+      padding: .4rem .75rem;
+      border-radius: 6px;
+      transition: all .15s
+    }
 
-/* BOTTOM SPLIT */
-.bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+    .nav-links a:hover {
+      color: var(--text);
+      background: #f3f4f6
+    }
 
-/* TABLE */
-.panel{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.panel-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border)}
-.panel-title{font-size:.9rem;font-weight:600;color:var(--text)}
-table{width:100%;border-collapse:collapse;font-size:.8rem}
-th{text-align:left;padding:.65rem 1.25rem;color:var(--text3);font-weight:600;font-size:.7rem;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--border);background:#fafafa}
-td{padding:.7rem 1.25rem;border-bottom:1px solid #f3f4f6;color:var(--text)}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:#fafafa}
-.status-badge{font-size:.65rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:.2rem .5rem;border-radius:4px}
-.s-easy{background:var(--green-bg);color:var(--green)}
-.s-medium{background:var(--yellow-bg);color:var(--yellow)}
-.s-hard{background:var(--red-bg);color:var(--red)}
-.score-num{font-family:var(--mono);font-weight:500;color:var(--text)}
+    .nav-links a.active {
+      color: var(--green);
+      border-bottom: 2px solid var(--green);
+      border-radius: 0;
+      padding-bottom: .3rem
+    }
 
-/* PERF */
-.perf-panel{display:flex;flex-direction:column;gap:1rem}
-.metric-row{padding:0}
-.metric-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem}
-.metric-name{font-size:.78rem;font-weight:500;color:var(--text);text-transform:uppercase;letter-spacing:.5px}
-.metric-val{font-family:var(--mono);font-size:.8rem;font-weight:600;color:var(--text)}
-.bar-track{height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden}
-.bar-fill{height:100%;border-radius:3px;transition:width 1s ease}
-.fill-green{background:var(--green)}
-.fill-blue{background:var(--blue)}
-.fill-yellow{background:var(--yellow)}
-.fill-red{background:var(--red)}
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem
+    }
 
-/* CODE */
-.code-block{background:#0f172a;border-radius:12px;overflow:hidden;margin-top:1rem}
-.code-header{padding:.6rem 1rem;background:#1e293b;display:flex;align-items:center;gap:.5rem}
-.code-dot{width:10px;height:10px;border-radius:50%}
-.code-body{padding:1rem;font-family:var(--mono);font-size:.75rem;line-height:1.7;color:#94a3b8;overflow-x:auto}
-.code-body .kw{color:#7c3aed}
-.code-body .fn{color:#38bdf8}
-.code-body .str{color:#34d399}
-.code-body .cm{color:#475569}
-.code-body .num{color:#fb923c}
+    .search {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      background: #f3f4f6;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .35rem .75rem;
+      font-size: .8rem;
+      color: var(--text3);
+      width: 200px
+    }
 
-/* FOOTER */
-footer{border-top:1px solid var(--border);padding:1.25rem 2rem;display:flex;justify-content:space-between;align-items:center;font-size:.72rem;color:var(--text3)}
-.footer-links{display:flex;gap:1.5rem}
-.footer-links a{color:var(--text3);text-decoration:none}
-.footer-links a:hover{color:var(--text)}
+    .search svg {
+      flex-shrink: 0
+    }
 
-@media(max-width:768px){
-  .stats{grid-template-columns:repeat(2,1fr)}
-  .features{grid-template-columns:1fr}
-  .bottom-grid{grid-template-columns:1fr}
-  .hero-title{font-size:1.8rem}
-}
-</style>
+    .nav-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text2);
+      border: 1px solid var(--border)
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--green), #10b981);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .75rem;
+      font-weight: 700;
+      color: white
+    }
+
+    /* MAIN */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 2rem 4rem
+    }
+
+    /* HERO */
+    .breadcrumb {
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      color: var(--green);
+      text-transform: uppercase;
+      margin-bottom: 1.25rem
+    }
+
+    .hero-title {
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      color: var(--text);
+      max-width: 520px
+    }
+
+    .hero-desc {
+      color: var(--text2);
+      font-size: .9rem;
+      line-height: 1.7;
+      max-width: 480px;
+      margin-bottom: 1.5rem
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-bottom: 2.5rem
+    }
+
+    .tag {
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      padding: .3rem .7rem;
+      color: var(--text2);
+      background: var(--white)
+    }
+
+    /* STATS */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 2.5rem
+    }
+
+    .stat-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem
+    }
+
+    .stat-card.highlight {
+      background: var(--green-dark);
+      border-color: var(--green-dark);
+      color: white
+    }
+
+    .stat-label {
+      font-size: .68rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: .5rem
+    }
+
+    .stat-card.highlight .stat-label {
+      color: rgba(255, 255, 255, 0.65)
+    }
+
+    .stat-num {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1
+    }
+
+    .stat-card.highlight .stat-num {
+      color: white
+    }
+
+    .stat-sub {
+      margin-top: .5rem;
+      font-size: .75rem;
+      color: var(--text3);
+      display: flex;
+      align-items: center;
+      gap: .3rem
+    }
+
+    .stat-card.highlight .stat-sub {
+      color: rgba(255, 255, 255, 0.6)
+    }
+
+    .stat-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .25rem;
+      font-size: .7rem;
+      font-weight: 600;
+      padding: .15rem .5rem;
+      border-radius: 4px
+    }
+
+    .badge-green {
+      background: var(--green-bg);
+      color: var(--green)
+    }
+
+    .badge-yellow {
+      background: var(--yellow-bg);
+      color: var(--yellow)
+    }
+
+    .badge-red {
+      background: var(--red-bg);
+      color: var(--red)
+    }
+
+    .badge-green-inv {
+      background: rgba(255, 255, 255, 0.2);
+      color: white
+    }
+
+    /* SECTION HEADER */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem
+    }
+
+    .section-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text)
+    }
+
+    .section-tag {
+      font-size: .68rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: .25rem .6rem
+    }
+
+    /* TOPOLOGY */
+    .topo-box {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0;
+      overflow: hidden;
+      margin-bottom: 2.5rem
+    }
+
+    #topoCanvas {
+      width: 100%;
+      height: 320px;
+      display: block
+    }
+
+    /* FEATURES */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 2.5rem
+    }
+
+    .feature {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: border-color .2s, box-shadow .2s
+    }
+
+    .feature:hover {
+      border-color: var(--green);
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.08)
+    }
+
+    .feat-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      margin-bottom: 1rem
+    }
+
+    .feat-icon.g {
+      background: var(--green-light)
+    }
+
+    .feat-icon.r {
+      background: var(--red-bg)
+    }
+
+    .feat-icon.b {
+      background: var(--blue-bg)
+    }
+
+    .feat-icon.y {
+      background: var(--yellow-bg)
+    }
+
+    .feature h3 {
+      font-size: .9rem;
+      font-weight: 600;
+      margin-bottom: .4rem;
+      color: var(--text)
+    }
+
+    .feature p {
+      font-size: .8rem;
+      color: var(--text2);
+      line-height: 1.6
+    }
+
+    /* BOTTOM SPLIT */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem
+    }
+
+    /* TABLE */
+    .panel {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden
+    }
+
+    .panel-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .panel-title {
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--text)
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .8rem
+    }
+
+    th {
+      text-align: left;
+      padding: .65rem 1.25rem;
+      color: var(--text3);
+      font-weight: 600;
+      font-size: .7rem;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      background: #fafafa
+    }
+
+    td {
+      padding: .7rem 1.25rem;
+      border-bottom: 1px solid #f3f4f6;
+      color: var(--text)
+    }
+
+    tr:last-child td {
+      border-bottom: none
+    }
+
+    tr:hover td {
+      background: #fafafa
+    }
+
+    .status-badge {
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      padding: .2rem .5rem;
+      border-radius: 4px
+    }
+
+    .s-easy {
+      background: var(--green-bg);
+      color: var(--green)
+    }
+
+    .s-medium {
+      background: var(--yellow-bg);
+      color: var(--yellow)
+    }
+
+    .s-hard {
+      background: var(--red-bg);
+      color: var(--red)
+    }
+
+    .score-num {
+      font-family: var(--mono);
+      font-weight: 500;
+      color: var(--text)
+    }
+
+    /* PERF */
+    .perf-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem
+    }
+
+    .metric-row {
+      padding: 0
+    }
+
+    .metric-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: .4rem
+    }
+
+    .metric-name {
+      font-size: .78rem;
+      font-weight: 500;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: .5px
+    }
+
+    .metric-val {
+      font-family: var(--mono);
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--text)
+    }
+
+    .bar-track {
+      height: 6px;
+      background: #f3f4f6;
+      border-radius: 3px;
+      overflow: hidden
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 1s ease
+    }
+
+    .fill-green {
+      background: var(--green)
+    }
+
+    .fill-blue {
+      background: var(--blue)
+    }
+
+    .fill-yellow {
+      background: var(--yellow)
+    }
+
+    .fill-red {
+      background: var(--red)
+    }
+
+    /* CODE */
+    .code-block {
+      background: #0f172a;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 1rem
+    }
+
+    .code-header {
+      padding: .6rem 1rem;
+      background: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: .5rem
+    }
+
+    .code-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%
+    }
+
+    .code-body {
+      padding: 1rem;
+      font-family: var(--mono);
+      font-size: .75rem;
+      line-height: 1.7;
+      color: #94a3b8;
+      overflow-x: auto
+    }
+
+    .code-body .kw {
+      color: #7c3aed
+    }
+
+    .code-body .fn {
+      color: #38bdf8
+    }
+
+    .code-body .str {
+      color: #34d399
+    }
+
+    .code-body .cm {
+      color: #475569
+    }
+
+    .code-body .num {
+      color: #fb923c
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1.25rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: .72rem;
+      color: var(--text3)
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.5rem
+    }
+
+    .footer-links a {
+      color: var(--text3);
+      text-decoration: none
+    }
+
+    .footer-links a:hover {
+      color: var(--text)
+    }
+
+    @media(max-width:768px) {
+      .stats {
+        grid-template-columns: repeat(2, 1fr)
+      }
+
+      .features {
+        grid-template-columns: 1fr
+      }
+
+      .bottom-grid {
+        grid-template-columns: 1fr
+      }
+
+      .hero-title {
+        font-size: 1.8rem
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<!-- NAV -->
-<nav>
-  <div class="nav-left">
-    <div class="logo">SRE-GYM</div>
-    <div class="nav-links">
-      <a href="#" class="active">Dashboard</a>
-      <a href="#tasks">Incidents</a>
-      <a href="#features">Environments</a>
-      <a href="/docs" target="_blank">Models</a>
-    </div>
-  </div>
-  
-  </div>
-</nav>
-
-<!-- MAIN -->
-<main>
-
-  <!-- HERO -->
-  <div style="padding:2rem 0 0">
-    <div class="breadcrumb">RL Integration Framework</div>
-    <h1 class="hero-title">The Incident Response<br>RL Environment</h1>
-    <p class="hero-desc">SRE-Gym provides a standardized reinforcement learning interface for complex cloud architectures. Train agents to diagnose cascading failures, apply correct remediations, and minimize MTTR in high-fidelity sandbox clusters with deterministic scoring — no LLM judges.</p>
-    <div class="tag-row">
-      <span class="tag">Deterministic Grading</span>
-      <span class="tag">OpenEnv Compatible</span>
-      <span class="tag">Real-Time Telemetry</span>
-      <span class="tag">Fault Injection</span>
-    </div>
-  </div>
-
-  <!-- STATS -->
-  <div class="stats">
-    <div class="stat-card">
-      <div class="stat-label">Curated Scenarios</div>
-      <div class="stat-num">12</div>
-      <div class="stat-sub">
-        <span class="stat-badge badge-green">● 3 difficulty tiers</span>
-      </div>
-    </div>
-    <div class="stat-card highlight">
-      <div class="stat-label">Overall Avg Score</div>
-      <div class="stat-num">0.498</div>
-      <div class="stat-sub">
-        <span class="stat-badge badge-green-inv">● gpt-4o-mini baseline</span>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Action Types</div>
-      <div class="stat-num">6</div>
-      <div class="stat-sub" style="color:var(--text3)">query · diagnose · remediate</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Simulated Faults</div>
-      <div class="stat-num">8.4K</div>
-      <div class="stat-sub" style="color:var(--text3)">Total evaluation runs</div>
-    </div>
-  </div>
-
-  <!-- TOPOLOGY -->
-  <div class="section-header">
-    <div class="section-title">System Topology</div>
-    <div class="section-tag">Environment: PROD-CLUSTER-04</div>
-  </div>
-  <div class="topo-box">
-    <canvas id="topoCanvas"></canvas>
-  </div>
-
-  <!-- FEATURES -->
-  <div class="section-header">
-    <div class="section-title">Core Capabilities</div>
-  </div>
-  <div class="features" id="features">
-    <div class="feature">
-      <div class="feat-icon g">⚡</div>
-      <h3>Instant Reset</h3>
-      <p>Reset the entire cluster state in &lt;100ms for rapid training iterations and epoch efficiency. Seed-reproducible fault injection ensures fair evaluation.</p>
-    </div>
-    <div class="feature">
-      <div class="feat-icon b">📊</div>
-      <h3>Action Space</h3>
-      <p>Six structured action types: query_logs, query_metrics, submit_diagnosis, apply_remediation, escalate, and submit_postmortem.</p>
-    </div>
-    <div class="feature">
-      <div class="feat-icon g">🎯</div>
-      <h3>Reward Shaping</h3>
-      <p>Strict deterministic graders — no LLM judges. Exact canonical cause names required. Terminal-only scoring prevents reward hacking.</p>
-    </div>
-    <div class="feature">
-      <div class="feat-icon b">🕸️</div>
-      <h3>Dynamic Graph</h3>
-      <p>Agents perceive infrastructure as a directed dependency graph. Partial observability expands as services are queried — no free information.</p>
-    </div>
-    <div class="feature">
-      <div class="feat-icon y">🎣</div>
-      <h3>Red Herring Injection</h3>
-      <p>Decoy alerts and metrics with −0.40 diagnosis penalty. Agents that chase noise are explicitly punished, separating strong from weak models.</p>
-    </div>
-    <div class="feature">
-      <div class="feat-icon r">⚔️</div>
-      <h3>Adversarial Grading</h3>
-      <p>Substring guessing yields zero credit. SequenceMatcher threshold ≥ 0.92 required. Mini models cannot inflate scores via keyword pattern matching.</p>
-    </div>
-  </div>
-
-  <!-- BOTTOM SPLIT -->
-  <div class="bottom-grid" id="tasks">
-
-    <!-- TRAINING SCENARIOS TABLE -->
-    <div>
-      <div class="section-header">
-        <div class="section-title">Training Scenarios</div>
-      </div>
-      <div class="panel">
-        <table>
-          <thead>
-            <tr>
-              <th>Scenario Name</th>
-              <th>Difficulty</th>
-              <th>Score</th>
-              <th>RH</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>Redis OOM Crash</td><td><span class="status-badge s-easy">Easy</span></td><td class="score-num">0.427</td><td>0</td></tr>
-            <tr><td>Postgres Pool Exhaustion</td><td><span class="status-badge s-easy">Easy</span></td><td class="score-num">0.429</td><td>0</td></tr>
-            <tr><td>Config Typo CrashLoop</td><td><span class="status-badge s-easy">Easy</span></td><td class="score-num">0.475</td><td>0</td></tr>
-            <tr><td>Disk Full</td><td><span class="status-badge s-easy">Easy</span></td><td class="score-num">0.557</td><td>0</td></tr>
-            <tr><td>Redis Cascade Failure</td><td><span class="status-badge s-medium">Medium</span></td><td class="score-num">0.556</td><td>1</td></tr>
-            <tr><td>Auth JWT Bug</td><td><span class="status-badge s-medium">Medium</span></td><td class="score-num">0.586</td><td>1</td></tr>
-            <tr><td>Traffic Spike Overload</td><td><span class="status-badge s-medium">Medium</span></td><td class="score-num">0.325</td><td>1</td></tr>
-            <tr><td>mTLS Cert Expiry</td><td><span class="status-badge s-medium">Medium</span></td><td class="score-num">0.588</td><td>1</td></tr>
-            <tr><td>Config Cascade + Postmortem</td><td><span class="status-badge s-hard">Hard</span></td><td class="score-num">0.385</td><td>2</td></tr>
-            <tr><td>Network Partition</td><td><span class="status-badge s-hard">Hard</span></td><td class="score-num">0.577</td><td>2</td></tr>
-            <tr><td>Deploy Regression</td><td><span class="status-badge s-hard">Hard</span></td><td class="score-num">0.497</td><td>2</td></tr>
-            <tr><td>DNS Misconfiguration</td><td><span class="status-badge s-hard">Hard</span></td><td class="score-num">0.573</td><td>2</td></tr>
-          </tbody>
-        </table>
+  <!-- NAV -->
+  <nav>
+    <div class="nav-left">
+      <div class="logo">SRE-GYM</div>
+      <div class="nav-links">
+        <a href="#" class="active">Dashboard</a>
+        <a href="#tasks">Incidents</a>
+        <a href="#features">Environments</a>
+        <a href="/docs" target="_blank">Models</a>
       </div>
     </div>
 
-    <!-- RIGHT SIDE -->
-    <div>
-      <div class="section-header">
-        <div class="section-title">Model Performance</div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- HERO -->
+    <div style="padding:2rem 0 0">
+      <div class="breadcrumb">RL Integration Framework</div>
+      <h1 class="hero-title">The Incident Response<br>RL Environment</h1>
+      <p class="hero-desc">SRE-Gym provides a standardized reinforcement learning interface for complex cloud
+        architectures. Train agents to diagnose cascading failures, apply correct remediations, and minimize MTTR in
+        high-fidelity sandbox clusters with deterministic scoring — no LLM judges.</p>
+      <div class="tag-row">
+        <span class="tag">Deterministic Grading</span>
+        <span class="tag">OpenEnv Compatible</span>
+        <span class="tag">Real-Time Telemetry</span>
+        <span class="tag">Fault Injection</span>
       </div>
-      <div class="panel" style="padding:1.25rem">
-        <div class="perf-panel">
-          <div class="metric-row">
-            <div class="metric-label">
-              <span class="metric-name">Easy Tasks Avg</span>
-              <span class="metric-val">47.2%</span>
-            </div>
-            <div class="bar-track"><div class="bar-fill fill-green" style="width:47.2%"></div></div>
-          </div>
-          <div class="metric-row">
-            <div class="metric-label">
-              <span class="metric-name">Medium Tasks Avg</span>
-              <span class="metric-val">51.4%</span>
-            </div>
-            <div class="bar-track"><div class="bar-fill fill-blue" style="width:51.4%"></div></div>
-          </div>
-          <div class="metric-row">
-            <div class="metric-label">
-              <span class="metric-name">Hard Tasks Avg</span>
-              <span class="metric-val">50.8%</span>
-            </div>
-            <div class="bar-track"><div class="bar-fill fill-yellow" style="width:50.8%"></div></div>
-          </div>
-          <div class="metric-row">
-            <div class="metric-label">
-              <span class="metric-name">Red Herring Trap Rate</span>
-              <span class="metric-val" style="color:var(--red)">−0.40</span>
-            </div>
-            <div class="bar-track"><div class="bar-fill fill-red" style="width:40%"></div></div>
-          </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Curated Scenarios</div>
+        <div class="stat-num">12</div>
+        <div class="stat-sub">
+          <span class="stat-badge badge-green">● 3 difficulty tiers</span>
+        </div>
+      </div>
+      <div class="stat-card highlight">
+        <div class="stat-label">Overall Avg Score</div>
+        <div class="stat-num">0.498</div>
+        <div class="stat-sub">
+          <span class="stat-badge badge-green-inv">● gpt-4o-mini baseline</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Action Types</div>
+        <div class="stat-num">6</div>
+        <div class="stat-sub" style="color:var(--text3)">query · diagnose · remediate</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Simulated Faults</div>
+        <div class="stat-num">8.4K</div>
+        <div class="stat-sub" style="color:var(--text3)">Total evaluation runs</div>
+      </div>
+    </div>
+
+    <!-- TOPOLOGY -->
+    <div class="section-header">
+      <div class="section-title">System Topology</div>
+      <div class="section-tag">Environment: PROD-CLUSTER-04</div>
+    </div>
+    <div class="topo-box">
+      <canvas id="topoCanvas"></canvas>
+    </div>
+
+    <!-- FEATURES -->
+    <div class="section-header">
+      <div class="section-title">Core Capabilities</div>
+    </div>
+    <div class="features" id="features">
+      <div class="feature">
+        <div class="feat-icon g">⚡</div>
+        <h3>Instant Reset</h3>
+        <p>Reset the entire cluster state in &lt;100ms for rapid training iterations and epoch efficiency.
+          Seed-reproducible fault injection ensures fair evaluation.</p>
+      </div>
+      <div class="feature">
+        <div class="feat-icon b">📊</div>
+        <h3>Action Space</h3>
+        <p>Six structured action types: query_logs, query_metrics, submit_diagnosis, apply_remediation, escalate, and
+          submit_postmortem.</p>
+      </div>
+      <div class="feature">
+        <div class="feat-icon g">🎯</div>
+        <h3>Reward Shaping</h3>
+        <p>Strict deterministic graders — no LLM judges. Exact canonical cause names required. Terminal-only scoring
+          prevents reward hacking.</p>
+      </div>
+      <div class="feature">
+        <div class="feat-icon b">🕸️</div>
+        <h3>Dynamic Graph</h3>
+        <p>Agents perceive infrastructure as a directed dependency graph. Partial observability expands as services are
+          queried — no free information.</p>
+      </div>
+      <div class="feature">
+        <div class="feat-icon y">🎣</div>
+        <h3>Red Herring Injection</h3>
+        <p>Decoy alerts and metrics with −0.40 diagnosis penalty. Agents that chase noise are explicitly punished,
+          separating strong from weak models.</p>
+      </div>
+      <div class="feature">
+        <div class="feat-icon r">⚔️</div>
+        <h3>Adversarial Grading</h3>
+        <p>Substring guessing yields zero credit. SequenceMatcher threshold ≥ 0.92 required. Mini models cannot inflate
+          scores via keyword pattern matching.</p>
+      </div>
+    </div>
+
+    <!-- BOTTOM SPLIT -->
+    <div class="bottom-grid" id="tasks">
+
+      <!-- TRAINING SCENARIOS TABLE -->
+      <div>
+        <div class="section-header">
+          <div class="section-title">Training Scenarios</div>
+        </div>
+        <div class="panel">
+          <table>
+            <thead>
+              <tr>
+                <th>Scenario Name</th>
+                <th>Difficulty</th>
+                <th>Score</th>
+                <th>RH</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Redis OOM Crash</td>
+                <td><span class="status-badge s-easy">Easy</span></td>
+                <td class="score-num">0.427</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td>Postgres Pool Exhaustion</td>
+                <td><span class="status-badge s-easy">Easy</span></td>
+                <td class="score-num">0.429</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td>Config Typo CrashLoop</td>
+                <td><span class="status-badge s-easy">Easy</span></td>
+                <td class="score-num">0.475</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td>Disk Full</td>
+                <td><span class="status-badge s-easy">Easy</span></td>
+                <td class="score-num">0.557</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td>Redis Cascade Failure</td>
+                <td><span class="status-badge s-medium">Medium</span></td>
+                <td class="score-num">0.556</td>
+                <td>1</td>
+              </tr>
+              <tr>
+                <td>Auth JWT Bug</td>
+                <td><span class="status-badge s-medium">Medium</span></td>
+                <td class="score-num">0.586</td>
+                <td>1</td>
+              </tr>
+              <tr>
+                <td>Traffic Spike Overload</td>
+                <td><span class="status-badge s-medium">Medium</span></td>
+                <td class="score-num">0.325</td>
+                <td>1</td>
+              </tr>
+              <tr>
+                <td>mTLS Cert Expiry</td>
+                <td><span class="status-badge s-medium">Medium</span></td>
+                <td class="score-num">0.588</td>
+                <td>1</td>
+              </tr>
+              <tr>
+                <td>Config Cascade + Postmortem</td>
+                <td><span class="status-badge s-hard">Hard</span></td>
+                <td class="score-num">0.385</td>
+                <td>2</td>
+              </tr>
+              <tr>
+                <td>Network Partition</td>
+                <td><span class="status-badge s-hard">Hard</span></td>
+                <td class="score-num">0.577</td>
+                <td>2</td>
+              </tr>
+              <tr>
+                <td>Deploy Regression</td>
+                <td><span class="status-badge s-hard">Hard</span></td>
+                <td class="score-num">0.497</td>
+                <td>2</td>
+              </tr>
+              <tr>
+                <td>DNS Misconfiguration</td>
+                <td><span class="status-badge s-hard">Hard</span></td>
+                <td class="score-num">0.573</td>
+                <td>2</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <!-- CODE SNIPPET -->
-      <div style="margin-top:1.25rem">
-        <div class="section-title" style="margin-bottom:.75rem;font-size:.9rem">Agent Snippet</div>
-        <div class="code-block">
-          <div class="code-header">
-            <div class="code-dot" style="background:#ef4444"></div>
-            <div class="code-dot" style="background:#f59e0b"></div>
-            <div class="code-dot" style="background:#10b981"></div>
-            <span style="font-family:var(--mono);font-size:.7rem;color:#475569;margin-left:.5rem">run_baseline.py</span>
-          </div>
-          <div class="code-body"><span class="kw">import</span> <span class="fn">sre_gym</span>
-<span class="kw">from</span> <span class="fn">openai</span> <span class="kw">import</span> OpenAI
-
-<span class="cm"># Connect to live environment</span>
-<span class="fn">env</span> = sre_gym.<span class="fn">make</span>(<span class="str">"task_hard_2"</span>)
-client = <span class="fn">OpenAI</span>(api_key=HF_TOKEN)
-
-<span class="cm"># Run episode with structured actions</span>
-<span class="kw">for</span> step <span class="kw">in</span> <span class="fn">range</span>(<span class="num">20</span>):
-  obs = env.<span class="fn">step</span>(
-    action=model.<span class="fn">predict</span>(obs)
-  )
-  <span class="kw">if</span> obs.done: <span class="kw">break</span>
-
-<span class="cm"># Only terminal reward counts</span>
-score = obs.reward  <span class="cm"># → 0.577</span></div>
+      <!-- RIGHT SIDE -->
+      <div>
+        <div class="section-header">
+          <div class="section-title">Model Performance</div>
         </div>
+        <div class="panel" style="padding:1.25rem">
+          <div class="perf-panel">
+            <div class="metric-row">
+              <div class="metric-label">
+                <span class="metric-name">Easy Tasks Avg</span>
+                <span class="metric-val">47.2%</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill fill-green" style="width:47.2%"></div>
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span class="metric-name">Medium Tasks Avg</span>
+                <span class="metric-val">51.4%</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill fill-blue" style="width:51.4%"></div>
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span class="metric-name">Hard Tasks Avg</span>
+                <span class="metric-val">50.8%</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill fill-yellow" style="width:50.8%"></div>
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span class="metric-name">Red Herring Trap Rate</span>
+                <span class="metric-val" style="color:var(--red)">−0.40</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill fill-red" style="width:40%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CODE SNIPPET -->
+        <div style="margin-top:1.25rem">
+          <div class="section-title" style="margin-bottom:.75rem;font-size:.9rem">Agent Snippet</div>
+          <div class="code-block">
+            <div class="code-header">
+              <div class="code-dot" style="background:#ef4444"></div>
+              <div class="code-dot" style="background:#f59e0b"></div>
+              <div class="code-dot" style="background:#10b981"></div>
+              <span
+                style="font-family:var(--mono);font-size:.7rem;color:#475569;margin-left:.5rem">run_baseline.py</span>
+            </div>
+            <div class="code-body"><span class="kw">import</span> <span class="fn">sre_gym</span>
+              <span class="kw">from</span> <span class="fn">openai</span> <span class="kw">import</span> OpenAI
+
+              <span class="cm"># Connect to live environment</span>
+              <span class="fn">env</span> = sre_gym.<span class="fn">make</span>(<span class="str">"task_hard_2"</span>)
+              client = <span class="fn">OpenAI</span>(api_key=HF_TOKEN)
+
+              <span class="cm"># Run episode with structured actions</span>
+              <span class="kw">for</span> step <span class="kw">in</span> <span class="fn">range</span>(<span
+                class="num">20</span>):
+              obs = env.<span class="fn">step</span>(
+              action=model.<span class="fn">predict</span>(obs)
+              )
+              <span class="kw">if</span> obs.done: <span class="kw">break</span>
+
+              <span class="cm"># Only terminal reward counts</span>
+              score = obs.reward <span class="cm"># → 0.577</span>
+            </div>
+          </div>
+        </div>
+
       </div>
-
     </div>
-  </div>
 
-</main>
+  </main>
 
-<!-- FOOTER -->
-<footer>
-  <span>© 2024 SRE-GYM. Precision Incident Response Framework.</span>
-  <div class="footer-links">
-    <a href="/docs" target="_blank">Documentation</a>
-    <a href="/docs#/default" target="_blank">API Reference</a>
-    <a href="https://github.com" target="_blank">GitHub</a>
-  </div>
-</footer>
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-links">
+      <a href="/docs" target="_blank">Documentation</a>
+      <a href="/docs#/default" target="_blank">API Reference</a>
+      <a href="https://github.com/nikunjkaushik20/Sre-Gym" target="_blank">GitHub</a>
+    </div>
+  </footer>
 
-<script>
-// ── TOPOLOGY CANVAS ──────────────────────────────────────────────────────────
-const canvas = document.getElementById('topoCanvas');
-const ctx = canvas.getContext('2d');
-let W, H;
+  <script>
+    // ── TOPOLOGY CANVAS ──────────────────────────────────────────────────────────
+    const canvas = document.getElementById('topoCanvas');
+    const ctx = canvas.getContext('2d');
+    let W, H;
 
-function resize() {
-  W = canvas.parentElement.clientWidth;
-  H = 320;
-  canvas.width = W * window.devicePixelRatio;
-  canvas.height = H * window.devicePixelRatio;
-  canvas.style.width = W + 'px';
-  canvas.style.height = H + 'px';
-  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-}
-resize();
-window.addEventListener('resize', () => { resize(); });
-
-const nodes = [
-  { id: 'api-gateway',    x: 0.50, y: 0.18, color: '#dc2626', fault: true,  r: 14 },
-  { id: 'auth-service',   x: 0.30, y: 0.45, color: '#d97706', fault: false, r: 12 },
-  { id: 'app-service',    x: 0.70, y: 0.45, color: '#2563eb', fault: false, r: 12 },
-  { id: 'redis',          x: 0.15, y: 0.75, color: '#dc2626', fault: true,  r: 11 },
-  { id: 'postgres',       x: 0.48, y: 0.75, color: '#059669', fault: false, r: 11 },
-  { id: 'config-service', x: 0.82, y: 0.75, color: '#7c3aed', fault: false, r: 11 },
-];
-
-const edges = [
-  ['api-gateway', 'auth-service'],
-  ['api-gateway', 'app-service'],
-  ['auth-service', 'redis'],
-  ['auth-service', 'postgres'],
-  ['app-service', 'postgres'],
-  ['app-service', 'config-service'],
-];
-
-const packets = edges.map(() => ({ t: Math.random(), speed: 0.003 + Math.random() * 0.003 }));
-
-let time = 0;
-function draw() {
-  ctx.clearRect(0, 0, W, H);
-
-  // Background
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, W, H);
-
-  // Grid dots
-  ctx.fillStyle = '#f3f4f6';
-  for (let x = 30; x < W; x += 30) {
-    for (let y = 20; y < H; y += 30) {
-      ctx.beginPath();
-      ctx.arc(x, y, 1.5, 0, Math.PI * 2);
-      ctx.fill();
+    function resize() {
+      W = canvas.parentElement.clientWidth;
+      H = 320;
+      canvas.width = W * window.devicePixelRatio;
+      canvas.height = H * window.devicePixelRatio;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     }
-  }
+    resize();
+    window.addEventListener('resize', () => { resize(); });
 
-  // Edges
-  edges.forEach(([from, to], i) => {
-    const a = nodes.find(n => n.id === from);
-    const b = nodes.find(n => n.id === to);
-    const ax = a.x * W, ay = a.y * H;
-    const bx = b.x * W, by = b.y * H;
-    const isFault = a.fault || b.fault;
+    const nodes = [
+      { id: 'api-gateway', x: 0.50, y: 0.18, color: '#dc2626', fault: true, r: 14 },
+      { id: 'auth-service', x: 0.30, y: 0.45, color: '#d97706', fault: false, r: 12 },
+      { id: 'app-service', x: 0.70, y: 0.45, color: '#2563eb', fault: false, r: 12 },
+      { id: 'redis', x: 0.15, y: 0.75, color: '#dc2626', fault: true, r: 11 },
+      { id: 'postgres', x: 0.48, y: 0.75, color: '#059669', fault: false, r: 11 },
+      { id: 'config-service', x: 0.82, y: 0.75, color: '#7c3aed', fault: false, r: 11 },
+    ];
 
-    ctx.beginPath();
-    ctx.moveTo(ax, ay);
-    ctx.lineTo(bx, by);
-    ctx.strokeStyle = isFault ? `rgba(220,38,38,${0.2 + Math.sin(time * 2) * 0.1})` : '#e5e7eb';
-    ctx.lineWidth = isFault ? 1.5 : 1;
-    ctx.setLineDash(isFault ? [] : [4, 4]);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    const edges = [
+      ['api-gateway', 'auth-service'],
+      ['api-gateway', 'app-service'],
+      ['auth-service', 'redis'],
+      ['auth-service', 'postgres'],
+      ['app-service', 'postgres'],
+      ['app-service', 'config-service'],
+    ];
 
-    // Animated packet
-    packets[i].t += packets[i].speed;
-    if (packets[i].t > 1) packets[i].t = 0;
-    const t = packets[i].t;
-    const px = ax + (bx - ax) * t;
-    const py = ay + (by - ay) * t;
-    ctx.beginPath();
-    ctx.arc(px, py, 3, 0, Math.PI * 2);
-    ctx.fillStyle = isFault ? '#dc2626' : '#9ca3af';
-    ctx.fill();
-  });
+    const packets = edges.map(() => ({ t: Math.random(), speed: 0.003 + Math.random() * 0.003 }));
 
-  // Nodes
-  nodes.forEach(n => {
-    const x = n.x * W, y = n.y * H;
+    let time = 0;
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
 
-    // Fault glow
-    if (n.fault) {
-      const glow = n.r + 8 + Math.sin(time * 3) * 4;
-      const grad = ctx.createRadialGradient(x, y, 0, x, y, glow);
-      grad.addColorStop(0, 'rgba(220,38,38,0.15)');
-      grad.addColorStop(1, 'rgba(220,38,38,0)');
-      ctx.beginPath();
-      ctx.arc(x, y, glow, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
-      ctx.fill();
+      // Background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, W, H);
+
+      // Grid dots
+      ctx.fillStyle = '#f3f4f6';
+      for (let x = 30; x < W; x += 30) {
+        for (let y = 20; y < H; y += 30) {
+          ctx.beginPath();
+          ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Edges
+      edges.forEach(([from, to], i) => {
+        const a = nodes.find(n => n.id === from);
+        const b = nodes.find(n => n.id === to);
+        const ax = a.x * W, ay = a.y * H;
+        const bx = b.x * W, by = b.y * H;
+        const isFault = a.fault || b.fault;
+
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(bx, by);
+        ctx.strokeStyle = isFault ? `rgba(220,38,38,${0.2 + Math.sin(time * 2) * 0.1})` : '#e5e7eb';
+        ctx.lineWidth = isFault ? 1.5 : 1;
+        ctx.setLineDash(isFault ? [] : [4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Animated packet
+        packets[i].t += packets[i].speed;
+        if (packets[i].t > 1) packets[i].t = 0;
+        const t = packets[i].t;
+        const px = ax + (bx - ax) * t;
+        const py = ay + (by - ay) * t;
+        ctx.beginPath();
+        ctx.arc(px, py, 3, 0, Math.PI * 2);
+        ctx.fillStyle = isFault ? '#dc2626' : '#9ca3af';
+        ctx.fill();
+      });
+
+      // Nodes
+      nodes.forEach(n => {
+        const x = n.x * W, y = n.y * H;
+
+        // Fault glow
+        if (n.fault) {
+          const glow = n.r + 8 + Math.sin(time * 3) * 4;
+          const grad = ctx.createRadialGradient(x, y, 0, x, y, glow);
+          grad.addColorStop(0, 'rgba(220,38,38,0.15)');
+          grad.addColorStop(1, 'rgba(220,38,38,0)');
+          ctx.beginPath();
+          ctx.arc(x, y, glow, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+        }
+
+        // Node circle
+        ctx.beginPath();
+        ctx.arc(x, y, n.r, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.strokeStyle = n.color;
+        ctx.lineWidth = n.fault ? 2.5 : 1.5;
+        ctx.stroke();
+
+        // Fault X icon
+        if (n.fault) {
+          ctx.fillStyle = n.color;
+          ctx.font = `bold ${n.r * 0.9}px Inter`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('!', x, y);
+        }
+
+        // Label
+        ctx.fillStyle = '#374151';
+        ctx.font = '500 10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(n.id, x, y + n.r + 5);
+      });
+
+      time += 0.016;
+      requestAnimationFrame(draw);
     }
+    draw();
 
-    // Node circle
-    ctx.beginPath();
-    ctx.arc(x, y, n.r, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
-    ctx.strokeStyle = n.color;
-    ctx.lineWidth = n.fault ? 2.5 : 1.5;
-    ctx.stroke();
-
-    // Fault X icon
-    if (n.fault) {
-      ctx.fillStyle = n.color;
-      ctx.font = `bold ${n.r * 0.9}px Inter`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('!', x, y);
-    }
-
-    // Label
-    ctx.fillStyle = '#374151';
-    ctx.font = '500 10px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillText(n.id, x, y + n.r + 5);
-  });
-
-  time += 0.016;
-  requestAnimationFrame(draw);
-}
-draw();
-
-// ── ANIMATE BARS ON SCROLL ────────────────────────────────────────────────────
-const fills = document.querySelectorAll('.bar-fill');
-fills.forEach(el => {
-  const target = el.style.width;
-  el.style.width = '0%';
-  setTimeout(() => { el.style.width = target; }, 300);
-});
-</script>
+    // ── ANIMATE BARS ON SCROLL ────────────────────────────────────────────────────
+    const fills = document.querySelectorAll('.bar-fill');
+    fills.forEach(el => {
+      const target = el.style.width;
+      el.style.width = '0%';
+      setTimeout(() => { el.style.width = target; }, 300);
+    });
+  </script>
 </body>
+
 </html>
