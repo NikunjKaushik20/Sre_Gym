@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sre-gym"
-version = "1.0.0"
-description = "SRE incident response RL environment for OpenEnv"
+version = "1.1.0"
+description = "Deterministic RL environment for production SRE incident response"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

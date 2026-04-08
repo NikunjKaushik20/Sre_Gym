@@ -1,29 +1,42 @@
-# Environment Environments
-.env
-.venv
-env/
-venv/
-ENV/
-
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
 
 # Testing
 .pytest_cache/
 .coverage
 htmlcov/
-pytest_out*.txt
-test_out*.txt
-openenv_tree.txt
+*.log
 
-# Editor / IDE
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Docker
-.dockerignore
+# OS
+.DS_Store
+Thumbs.db
+
+# Output / scratch files (never commit test outputs)
+*.log
+test_out*.txt
+pytest_out*.txt
+pytest_results*.txt
+partial_test_output*.txt
+build.log
+inference_results*.txt
+openenv_tree*.txt
+test_py*.txt
+test_output*.txt

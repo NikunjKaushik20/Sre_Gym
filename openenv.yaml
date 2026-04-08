@@ -4,31 +4,31 @@ type: space
 runtime: fastapi
 app: server.app:app
 port: 8000
-description: "Deterministic RL environment for production SRE incident response. Agents diagnose cascading distributed system failures using dependency graphs, structured actions, and dense reward shaping with MTTR-based scoring. No LLM judges — fully deterministic graders."
+description: "Deterministic RL environment for production SRE incident response. Agents diagnose cascading distributed system failures using dependency graphs, structured actions, and dense reward shaping with MTTR-based scoring. Features dynamic metric evolution, partial observability, fuzzy grading, and procedural scenario generation. No LLM judges — fully deterministic graders."
 tasks:
   - id: task_easy_1
     name: "Single-Service Fault: Redis OOM"
-    description: "Redis OOM crash cascades to api-gateway timeouts. Single root cause, no red herrings. Diagnose and remediate."
+    description: "Redis OOM crash cascades to api-gateway timeouts. Single root cause, no red herrings."
     difficulty: easy
-    max_steps: 15
+    max_steps: 10
   - id: task_easy_2
     name: "Single-Service Fault: Postgres Pool Exhaustion"
     description: "Postgres connection pool exhaustion causing app-service failures. No red herrings."
     difficulty: easy
-    max_steps: 15
+    max_steps: 10
   - id: task_easy_3
     name: "Single-Service Fault: Config Typo CrashLoop"
     description: "Bad env var causes auth-service CrashLoopBackOff. No red herrings. Rollback config."
     difficulty: easy
-    max_steps: 15
+    max_steps: 10
   - id: task_easy_4
     name: "Single-Service Fault: Disk Full"
-    description: "Log rotation misconfigured — api-gateway disk 99% full. No red herrings. Flush logs."
+    description: "Log rotation misconfigured — api-gateway disk 99% full. No red herrings."
     difficulty: easy
-    max_steps: 15
+    max_steps: 10
   - id: task_medium_1
     name: "Cascading Failure: Redis Memory Leak"
-    description: "Redis OOM causes cache-miss storm in auth-service, which cascades to api-gateway 5xx. One red herring: unrelated postgres vacuum."
+    description: "Redis OOM causes cache-miss storm cascading to api-gateway 5xx. One red herring."
     difficulty: medium
     max_steps: 15
   - id: task_medium_2
@@ -38,31 +38,31 @@ tasks:
     max_steps: 15
   - id: task_medium_3
     name: "Cascading Failure: Traffic Spike"
-    description: "Flash-sale traffic spike overwhelms api-gateway. Auth CPU spike is a red herring (downstream victim)."
+    description: "Flash-sale traffic spike overwhelms api-gateway. Auth CPU spike is a red herring."
     difficulty: medium
     max_steps: 15
   - id: task_medium_4
     name: "Cascading Failure: TLS Cert Expiry"
-    description: "Expired TLS cert on api-gateway kills all HTTPS. Postgres slow batch query is a red herring."
+    description: "Expired TLS cert on api-gateway kills all HTTPS. Postgres slow query is a red herring."
     difficulty: medium
     max_steps: 15
   - id: task_hard_1
     name: "Multi-Service Cascade + Postmortem: Config Deploy"
-    description: "Bad config deploy to auth-service causes memory leak -> redis cache thrash -> api-gateway 503s. Two red herrings. Full postmortem required."
+    description: "Bad config deploy causes memory leak → cache thrash → 503s. Two red herrings. Full postmortem."
     difficulty: hard
-    max_steps: 15
+    max_steps: 20
   - id: task_hard_2
     name: "Multi-Service Cascade + Postmortem: Network Partition"
-    description: "Network partition isolates message-queue from auth-service. Auth retry storm floods redis. Two red herrings. Escalate to network team."
+    description: "Network partition isolates services. Auth retry storm floods redis. Two red herrings."
     difficulty: hard
-    max_steps: 15
+    max_steps: 20
   - id: task_hard_3
     name: "Multi-Service Cascade + Postmortem: Deploy Regression"
-    description: "Auth-service v2.3.1 breaks token validation. Redis bloat and postgres slowdown are red herrings from retry pressure. Full postmortem required."
+    description: "Auth-service v2.3.1 breaks token validation. Redis and postgres symptoms are red herrings."
     difficulty: hard
-    max_steps: 15
+    max_steps: 20
   - id: task_hard_4
     name: "Multi-Service Cascade + Postmortem: DNS Misconfiguration"
-    description: "DNS misconfiguration during region failover makes half of auth-service pods unreachable. Redis evictions and CPU spike are red herrings. Escalate + postmortem."
+    description: "DNS misconfiguration during region failover. Redis evictions and CPU spike are red herrings."
     difficulty: hard
-    max_steps: 15
+    max_steps: 20

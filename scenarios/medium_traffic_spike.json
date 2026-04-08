@@ -1,78 +1,106 @@
 {
-  "scenario_id": "medium_traffic_spike_001",
-  "task_id": "task_medium_3",
+  "scenario_id": "medium_traffic_spike",
   "difficulty": "medium",
-  "description": "Flash-sale traffic spike overwhelms api-gateway — no rate limiting configured. Auth-service CPU elevated as a downstream effect (red herring).",
-  "root_cause_service": "api-gateway",
-  "root_cause_type": "traffic_spike",
-  "correct_diagnosis": "traffic_spike",
-  "correct_playbook": "add_rate_limiting",
-  "correct_escalation_team": null,
+  "description": "Traffic spike overwhelming rate limiter, auth CPU red herring",
+  "services": [
+    "rate-limiter",
+    "auth-service",
+    "app-service",
+    "api-gateway"
+  ],
   "dependency_graph": {
-    "api-gateway": ["auth-service", "app-service"],
-    "auth-service": ["redis", "postgres"],
-    "app-service":  ["postgres"],
-    "redis": [],
-    "postgres": []
-  },
-  "initial_alerts": [
-    {"id": "A1", "service": "api-gateway", "severity": "critical", "timestamp": 8010, "message": "RPS spike: 4200 req/s (normal: 400). Upstream timeout storm."},
-    {"id": "A2", "service": "auth-service", "severity": "high",    "timestamp": 8015, "message": "CPU at 98% — high authentication request load"},
-    {"id": "A3", "service": "app-service",  "severity": "medium",  "timestamp": 8020, "message": "Slow query timeout — postgres overloaded by burst"}
-  ],
-  "initial_logs": [
-    {"t": 8000, "service": "api-gateway",  "msg": "RPS rising: 1200 req/s (3x normal)", "level": "warn"},
-    {"t": 8005, "service": "api-gateway",  "msg": "RPS at 3800 req/s — no rate limiter active", "level": "error"},
-    {"t": 8010, "service": "api-gateway",  "msg": "Connection queue overflow — dropping requests", "level": "fatal"},
-    {"t": 8015, "service": "auth-service", "msg": "Auth CPU 98% — burst of validation requests from api-gateway", "level": "warn"},
-    {"t": 8020, "service": "app-service",  "msg": "DB query timeout: postgres under sustained burst load", "level": "error"}
-  ],
-  "initial_metrics": {
-    "api_gateway_rps": 4200,
-    "api_gateway_error_rate_pct": 42.0,
-    "api_gateway_queue_depth": 8900,
-    "auth_service_cpu_pct": 98.0,
-    "postgres_query_time_ms": 380
-  },
-  "queryable_logs": {
     "api-gateway": [
-      {"t": 7950, "service": "api-gateway", "msg": "Traffic normal: 410 req/s", "level": "info"},
-      {"t": 8000, "service": "api-gateway", "msg": "RPS spike started: 1200 req/s (flash sale event?)", "level": "warn"},
-      {"t": 8005, "service": "api-gateway", "msg": "RPS at 3800 req/s — no rate limiter configured", "level": "error"},
-      {"t": 8008, "service": "api-gateway", "msg": "Worker queue saturated. Incoming connections stalling.", "level": "error"},
-      {"t": 8010, "service": "api-gateway", "msg": "Dropping requests — queue overflow", "level": "fatal"}
+      "rate-limiter"
     ],
-    "auth-service": [
-      {"t": 8013, "service": "auth-service", "msg": "Handling 10x normal authentication volume from api-gateway", "level": "warn"},
-      {"t": 8015, "service": "auth-service", "msg": "CPU at 98% — auth validation is CPU-bound at this load", "level": "warn"}
+    "rate-limiter": [
+      "app-service"
     ],
     "app-service": [
-      {"t": 8018, "service": "app-service", "msg": "Postgres timeout after 380ms (burst from api-gateway spike)", "level": "error"}
+      "auth-service"
     ],
-    "redis": [
-      {"t": 7980, "service": "redis", "msg": "Cache warm, hit rate 85%", "level": "info"}
+    "auth-service": []
+  },
+  "fault_service": "rate-limiter",
+  "fault_type": "traffic_spike",
+  "fault_severity": 0.1,
+  "playbook_effects": {
+    "add_rate_limiting": {
+      "target": "rate-limiter",
+      "heal_amount": 0.9
+    },
+    "restart_app": {
+      "target": "app-service",
+      "heal_amount": 0.4
+    },
+    "restart_gateway": {
+      "target": "api-gateway",
+      "heal_amount": 0.4
+    },
+    "rollback_config": {
+      "target": "rate-limiter",
+      "heal_amount": 0.5
+    },
+    "restart_redis": {
+      "target": "redis",
+      "heal_amount": 0.3
+    },
+    "scale_postgres_pool": {
+      "target": "postgres",
+      "heal_amount": 0.3
+    }
+  },
+  "available_playbooks": [
+    "add_rate_limiting",
+    "restart_app",
+    "restart_gateway",
+    "rollback_config",
+    "restart_redis",
+    "scale_postgres_pool"
+  ],
+  "service_logs": {
+    "rate-limiter": [
+      {
+        "msg": "Request queue overflow: 15000 pending, dropping requests",
+        "level": "fatal"
+      }
     ],
-    "postgres": [
-      {"t": 8020, "service": "postgres", "msg": "Max worker connections reached — queuing additional requests", "level": "warn"}
+    "auth-service": [
+      {
+        "msg": "CPU spike to 85% \u2014 batch job (red herring)",
+        "level": "warn"
+      }
+    ],
+    "app-service": [
+      {
+        "msg": "Rate limiter returning 429 for all requests",
+        "level": "error"
+      }
+    ],
+    "api-gateway": [
+      {
+        "msg": "Upstream 429/503 from rate-limiter",
+        "level": "error"
+      }
     ]
   },
-  "queryable_metrics": {
-    "api-gateway":  {"rps": 4200, "error_rate_pct": 42.0, "queue_depth": 8900, "rate_limit_active": 0},
-    "auth-service": {"cpu_pct": 98.0, "latency_ms": 450, "error_rate_pct": 5.0},
-    "app-service":  {"latency_ms": 380, "error_rate_pct": 8.0},
-    "redis":        {"hit_rate": 0.85, "connections": 120},
-    "postgres":     {"query_time_ms": 380, "connections": 97}
-  },
   "red_herrings": [
-    {"service": "auth-service", "fake_symptom": "CPU at 98%", "reason": "downstream effect of api-gateway serving 10x traffic — auth is a victim, not the cause"}
+    {
+      "service": "auth-service",
+      "symptom": "CPU spike from batch job",
+      "explanation": "Scheduled ML model update \u2014 unrelated"
+    }
   ],
-  "affected_services": ["api-gateway", "auth-service", "app-service"],
-  "valid_prevention_steps": ["add_rate_limiting", "load_test_before_sale", "autoscaling_policy"],
-  "min_timeline_steps": 3,
   "max_steps": 15,
-  "available_playbooks": [
-    "restart_redis", "scale_postgres_pool", "rollback_config",
-    "add_rate_limiting", "restart_message_queue", "flush_redis_cache",
-    "flush_logs", "renew_certificate"
-  ]
+  "affected_services": [
+    "rate-limiter",
+    "app-service",
+    "api-gateway"
+  ],
+  "valid_prevention_steps": [
+    "auto_scaling",
+    "load_testing",
+    "traffic_shaping"
+  ],
+  "min_timeline_steps": 3,
+  "correct_escalation_team": null
 }

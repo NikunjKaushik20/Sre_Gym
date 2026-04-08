@@ -1,83 +1,121 @@
 {
-  "scenario_id": "hard_multi_region_001",
-  "task_id": "task_hard_4",
+  "scenario_id": "hard_multi_region",
   "difficulty": "hard",
-  "description": "DNS misconfiguration during region failover — half of auth-service instances unreachable. Intermittent 503s. Redis eviction rate elevated (red herring) and api-gateway CPU high (victim red herring).",
-  "root_cause_service": "auth-service",
-  "root_cause_type": "dns_misconfiguration",
-  "correct_diagnosis": "dns_misconfiguration",
-  "correct_playbook": "rollback_config",
-  "correct_escalation_team": "network",
+  "description": "DNS misconfiguration during region failover",
+  "services": [
+    "dns-resolver",
+    "auth-service",
+    "redis",
+    "app-service",
+    "api-gateway"
+  ],
   "dependency_graph": {
-    "api-gateway": ["auth-service", "app-service"],
-    "auth-service": ["redis", "postgres"],
-    "app-service":  ["postgres"],
-    "redis": [],
-    "postgres": []
-  },
-  "initial_alerts": [
-    {"id": "A1", "service": "api-gateway",  "severity": "critical", "timestamp": 11015, "message": "Intermittent 503s — 50% of auth-service instances DNS-unreachable"},
-    {"id": "A2", "service": "auth-service", "severity": "high",     "timestamp": 11005, "message": "50% of auth instances failing DNS lookup — region-us-west2 down"},
-    {"id": "A3", "service": "redis",        "severity": "medium",   "timestamp": 11020, "message": "High eviction rate — cache churn from auth-service reconnects"},
-    {"id": "A4", "service": "api-gateway",  "severity": "medium",   "timestamp": 11025, "message": "CPU elevated — processing doubled error-retry traffic"}
-  ],
-  "initial_logs": [
-    {"t": 11000, "service": "auth-service", "msg": "DNS failover triggered: region-us-west2 removed from DNS pool", "level": "info"},
-    {"t": 11002, "service": "auth-service", "msg": "DNS lookup for auth.us-west2.internal: NXDOMAIN", "level": "error"},
-    {"t": 11005, "service": "auth-service", "msg": "50% of auth-service pods unreachable: DNS record propagation error", "level": "fatal"},
-    {"t": 11015, "service": "api-gateway",  "msg": "Intermittent 503: half of auth round-robin targets DNS-failing", "level": "error"},
-    {"t": 11020, "service": "redis",        "msg": "Eviction rate spike: auth reconnect storms flushing cache", "level": "warn"},
-    {"t": 11025, "service": "api-gateway",  "msg": "CPU 75% — processing doubled requests due to client retries", "level": "warn"}
-  ],
-  "initial_metrics": {
-    "auth_service_dns_fail_rate_pct": 50.0,
-    "api_gateway_503_rate_pct": 48.0,
-    "redis_eviction_rate_per_s": 1200,
-    "api_gateway_cpu_pct": 75.0,
-    "postgres_query_time_ms": 60
-  },
-  "queryable_logs": {
-    "auth-service": [
-      {"t": 10999, "service": "auth-service", "msg": "DNS failover initiated: removing us-west2 region from pool", "level": "info"},
-      {"t": 11000, "service": "auth-service", "msg": "DNS config updated: auth.prod.internal now missing us-west2 A records", "level": "warn"},
-      {"t": 11002, "service": "auth-service", "msg": "DNS lookup auth.us-west2.internal: NXDOMAIN — config propagation error", "level": "error"},
-      {"t": 11004, "service": "auth-service", "msg": "50% of auth instances still routing via stale DNS to failed region", "level": "fatal"},
-      {"t": 11010, "service": "auth-service", "msg": "Health checks: us-east2 OK, us-west2 NXDOMAIN", "level": "error"}
-    ],
     "api-gateway": [
-      {"t": 11015, "service": "api-gateway", "msg": "Round-robin: every 2nd auth target DNS-unreachable", "level": "error"},
-      {"t": 11020, "service": "api-gateway", "msg": "503 rate 48% — correlates exactly with us-west2 DNS failure", "level": "error"},
-      {"t": 11025, "service": "api-gateway", "msg": "CPU elevated: client retries causing 2x traffic volume", "level": "warn"}
-    ],
-    "redis": [
-      {"t": 11018, "service": "redis", "msg": "Auth-service reconnect storm evicting LRU keys from cache", "level": "warn"},
-      {"t": 11022, "service": "redis", "msg": "Eviction rate 1200/s (normal: 50/s) — reconnect thrash", "level": "warn"}
-    ],
-    "postgres": [
-      {"t": 11000, "service": "postgres", "msg": "Normal operation — query time 60ms", "level": "info"}
+      "app-service"
     ],
     "app-service": [
-      {"t": 11016, "service": "app-service", "msg": "Requests failing intermittently due to auth 503s", "level": "warn"}
+      "dns-resolver",
+      "auth-service"
+    ],
+    "auth-service": [
+      "redis"
+    ],
+    "dns-resolver": [],
+    "redis": []
+  },
+  "fault_service": "dns-resolver",
+  "fault_type": "dns_misconfiguration",
+  "fault_severity": 0.08,
+  "playbook_effects": {
+    "rollback_config": {
+      "target": "dns-resolver",
+      "heal_amount": 0.92
+    },
+    "restart_redis": {
+      "target": "redis",
+      "heal_amount": 0.4
+    },
+    "restart_app": {
+      "target": "app-service",
+      "heal_amount": 0.3
+    },
+    "restart_gateway": {
+      "target": "api-gateway",
+      "heal_amount": 0.3
+    },
+    "restart_message_queue": {
+      "target": "message-queue",
+      "heal_amount": 0.3
+    },
+    "scale_postgres_pool": {
+      "target": "postgres",
+      "heal_amount": 0.3
+    }
+  },
+  "available_playbooks": [
+    "rollback_config",
+    "restart_redis",
+    "restart_app",
+    "restart_gateway",
+    "restart_message_queue",
+    "scale_postgres_pool"
+  ],
+  "service_logs": {
+    "dns-resolver": [
+      {
+        "msg": "NXDOMAIN for api.internal \u2014 zone file corrupted",
+        "level": "fatal"
+      }
+    ],
+    "auth-service": [
+      {
+        "msg": "DNS timeout resolving session-store.internal (red herring)",
+        "level": "warn"
+      }
+    ],
+    "redis": [
+      {
+        "msg": "Eviction rate spiking \u2014 connection storm (red herring)",
+        "level": "warn"
+      }
+    ],
+    "app-service": [
+      {
+        "msg": "DNS resolution failed for all internal services",
+        "level": "error"
+      }
+    ],
+    "api-gateway": [
+      {
+        "msg": "Upstream DNS failures causing 503",
+        "level": "error"
+      }
     ]
   },
-  "queryable_metrics": {
-    "auth-service": {"dns_fail_rate_pct": 50.0, "affected_region": 1, "healthy_instances": 2, "total_instances": 4},
-    "api-gateway":  {"503_rate_pct": 48.0, "cpu_pct": 75.0, "rps": 820},
-    "redis":        {"eviction_rate_per_s": 1200, "memory_pct": 72.0},
-    "postgres":     {"query_time_ms": 60, "connections": 22},
-    "app-service":  {"error_rate_pct": 48.0}
-  },
   "red_herrings": [
-    {"service": "redis",      "fake_symptom": "high eviction rate", "reason": "auth-service reconnect storms are causing cache churn — this is a symptom of the DNS issue, not the cause"},
-    {"service": "api-gateway","fake_symptom": "CPU at 75%",         "reason": "elevated CPU is from doubled retry traffic — api-gateway is a victim, not the root cause"}
+    {
+      "service": "redis",
+      "symptom": "Eviction rate from connection storm",
+      "explanation": "Reconnection attempts flooding redis \u2014 symptom not cause"
+    },
+    {
+      "service": "auth-service",
+      "symptom": "DNS timeouts",
+      "explanation": "Auth affected by DNS issue \u2014 downstream victim"
+    }
   ],
-  "affected_services": ["auth-service", "api-gateway", "app-service"],
-  "valid_prevention_steps": ["dns_health_checks", "canary_dns_rollout", "multi_region_failover_test"],
+  "max_steps": 20,
+  "affected_services": [
+    "dns-resolver",
+    "auth-service",
+    "app-service",
+    "api-gateway"
+  ],
+  "valid_prevention_steps": [
+    "dns_health_checks",
+    "canary_dns_rollout",
+    "multi_region_failover_test"
+  ],
   "min_timeline_steps": 3,
-  "max_steps": 15,
-  "available_playbooks": [
-    "restart_redis", "scale_postgres_pool", "rollback_config",
-    "add_rate_limiting", "restart_message_queue", "flush_redis_cache",
-    "flush_logs", "renew_certificate"
-  ]
+  "correct_escalation_team": "infrastructure"
 }

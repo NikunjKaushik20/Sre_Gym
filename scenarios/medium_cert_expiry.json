@@ -1,73 +1,119 @@
 {
-  "scenario_id": "medium_cert_expiry_001",
-  "task_id": "task_medium_4",
+  "scenario_id": "medium_cert_expiry",
   "difficulty": "medium",
-  "description": "TLS cert expired on api-gateway — all HTTPS connections failing. Postgres shows slow queries from an unrelated batch job (red herring).",
-  "root_cause_service": "api-gateway",
-  "root_cause_type": "cert_expiry",
-  "correct_diagnosis": "cert_expiry",
-  "correct_playbook": "renew_certificate",
-  "correct_escalation_team": null,
+  "description": "mTLS certificate expiry on internal auth-proxy — symptoms appear as auth failures and connection resets, not obvious TLS errors",
+  "services": [
+    "auth-proxy",
+    "session-store",
+    "app-service",
+    "api-gateway"
+  ],
   "dependency_graph": {
-    "api-gateway": ["auth-service", "app-service"],
-    "auth-service": ["postgres"],
-    "app-service":  ["postgres"],
-    "postgres": []
-  },
-  "initial_alerts": [
-    {"id": "A1", "service": "api-gateway", "severity": "critical", "timestamp": 9000, "message": "TLS handshake failures at 100% — certificate expired 2h ago"},
-    {"id": "A2", "service": "auth-service", "severity": "high",    "timestamp": 9005, "message": "All HTTPS requests to api-gateway failing with SSL_ERROR"},
-    {"id": "A3", "service": "postgres",     "severity": "low",     "timestamp": 8940, "message": "Slow query detected: nightly_batch_report (unrelated)"}
-  ],
-  "initial_logs": [
-    {"t": 8998, "service": "api-gateway", "msg": "TLS certificate CN=api.prod.example.com expired at 2026-04-05T00:00:00Z", "level": "fatal"},
-    {"t": 9000, "service": "api-gateway", "msg": "SSL_ERROR_RX_RECORD_TOO_LONG — cert expired, handshake fails", "level": "fatal"},
-    {"t": 9005, "service": "auth-service", "msg": "Cannot reach api-gateway: SSL certificate verify failed", "level": "error"},
-    {"t": 8940, "service": "postgres",     "msg": "Slow query: nightly_batch_report running 45s (off-peak batch)", "level": "warn"}
-  ],
-  "initial_metrics": {
-    "api_gateway_tls_error_rate_pct": 100.0,
-    "api_gateway_cert_expiry_days": -0.08,
-    "api_gateway_https_success_rate": 0.0,
-    "auth_service_error_rate_pct": 100.0,
-    "postgres_query_time_ms": 450
-  },
-  "queryable_logs": {
     "api-gateway": [
-      {"t": 8900, "service": "api-gateway", "msg": "TLS cert expires in 0.08 days — auto-renewal not configured", "level": "warn"},
-      {"t": 8950, "service": "api-gateway", "msg": "TLS cert expires in 0.02 days", "level": "error"},
-      {"t": 8998, "service": "api-gateway", "msg": "TLS certificate EXPIRED (valid until 2026-04-05T00:00:00Z)", "level": "fatal"},
-      {"t": 9000, "service": "api-gateway", "msg": "SSL handshake failing for all clients", "level": "fatal"},
-      {"t": 9005, "service": "api-gateway", "msg": "HTTPS listener returning 503 — no valid certificate", "level": "fatal"}
-    ],
-    "auth-service": [
-      {"t": 9003, "service": "auth-service", "msg": "SSL_ERROR connecting to api-gateway:443", "level": "error"},
-      {"t": 9005, "service": "auth-service", "msg": "Auth flow broken — api-gateway HTTPS unavailable", "level": "error"}
+      "app-service"
     ],
     "app-service": [
-      {"t": 9004, "service": "app-service", "msg": "TLS verification failure connecting through api-gateway", "level": "error"}
+      "auth-proxy",
+      "session-store"
     ],
-    "postgres": [
-      {"t": 8940, "service": "postgres", "msg": "Slow query: nightly_batch_report — started 45s ago (scheduled)", "level": "warn"},
-      {"t": 8985, "service": "postgres", "msg": "nightly_batch_report completed successfully", "level": "info"}
+    "auth-proxy": [
+      "session-store"
+    ],
+    "session-store": []
+  },
+  "fault_service": "auth-proxy",
+  "fault_type": "cert_expiry",
+  "fault_severity": 0.12,
+  "playbook_effects": {
+    "renew_certificate": {
+      "target": "auth-proxy",
+      "heal_amount": 0.90
+    },
+    "restart_auth_proxy": {
+      "target": "auth-proxy",
+      "heal_amount": 0.25
+    },
+    "flush_session_store": {
+      "target": "session-store",
+      "heal_amount": 0.35
+    },
+    "rollback_config": {
+      "target": "app-service",
+      "heal_amount": 0.30
+    },
+    "restart_app": {
+      "target": "app-service",
+      "heal_amount": 0.20
+    },
+    "scale_postgres_pool": {
+      "target": "session-store",
+      "heal_amount": 0.20
+    }
+  },
+  "available_playbooks": [
+    "renew_certificate",
+    "restart_auth_proxy",
+    "flush_session_store",
+    "rollback_config",
+    "restart_app",
+    "scale_postgres_pool"
+  ],
+  "service_logs": {
+    "auth-proxy": [
+      {
+        "msg": "peer certificate verify error: (10:certificate has expired)",
+        "level": "error"
+      },
+      {
+        "msg": "mTLS handshake rejected — peer chain validation failed",
+        "level": "error"
+      }
+    ],
+    "session-store": [
+      {
+        "msg": "Connection spike: 1,200 idle connections evicted (red herring)",
+        "level": "warn"
+      },
+      {
+        "msg": "Eviction policy applied — cache churn within normal range",
+        "level": "info"
+      }
+    ],
+    "app-service": [
+      {
+        "msg": "Auth service returned 401 — token validation failed",
+        "level": "error"
+      },
+      {
+        "msg": "Retry budget exhausted for auth-proxy:8443",
+        "level": "error"
+      }
+    ],
+    "api-gateway": [
+      {
+        "msg": "Upstream 401 rate 94% — auth subsystem unhealthy",
+        "level": "error"
+      }
     ]
   },
-  "queryable_metrics": {
-    "api-gateway":  {"tls_error_rate_pct": 100.0, "cert_expiry_days": -0.08, "https_success_rate": 0.0},
-    "auth-service": {"error_rate_pct": 100.0, "latency_ms": 0},
-    "app-service":  {"error_rate_pct": 100.0, "latency_ms": 0},
-    "postgres":     {"query_time_ms": 450, "connections": 10}
-  },
   "red_herrings": [
-    {"service": "postgres", "fake_symptom": "slow query (45s)", "reason": "nightly_batch_report — scheduled at t=8940, completed at t=8985, started before incident, unrelated batch job"}
+    {
+      "service": "session-store",
+      "symptom": "High connection eviction rate and idle connection spike",
+      "explanation": "Caused by app-service retrying auth requests — resolves once auth-proxy cert is renewed"
+    }
   ],
-  "affected_services": ["api-gateway", "auth-service", "app-service"],
-  "valid_prevention_steps": ["cert_auto_renewal", "cert_expiry_alert_30d", "tls_monitoring"],
-  "min_timeline_steps": 2,
   "max_steps": 15,
-  "available_playbooks": [
-    "restart_redis", "scale_postgres_pool", "rollback_config",
-    "add_rate_limiting", "restart_message_queue", "flush_redis_cache",
-    "flush_logs", "renew_certificate"
-  ]
+  "affected_services": [
+    "auth-proxy",
+    "app-service",
+    "api-gateway"
+  ],
+  "valid_prevention_steps": [
+    "cert_expiry_monitoring",
+    "automated_cert_rotation",
+    "mtls_health_checks"
+  ],
+  "min_timeline_steps": 3,
+  "correct_escalation_team": null
 }

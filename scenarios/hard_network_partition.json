@@ -1,65 +1,122 @@
 {
-  "scenario_id": "hard_network_partition_001",
-  "task_id": "task_hard_2",
+  "scenario_id": "hard_network_partition",
   "difficulty": "hard",
-  "description": "Network partition between MQ and auth-service leads to cascade overload.",
-  "root_cause_service": "message-queue",
-  "root_cause_type": "network_partition",
-  "correct_diagnosis": "network_partition",
-  "correct_playbook": "restart_message_queue",
-  "correct_escalation_team": "network",
+  "description": "Message queue network partition causing auth retry storm",
+  "services": [
+    "message-queue",
+    "auth-service",
+    "redis",
+    "app-service",
+    "api-gateway"
+  ],
   "dependency_graph": {
-    "api-gateway": ["auth-service"],
-    "auth-service": ["redis", "message-queue"],
-    "message-queue": []
-  },
-  "initial_alerts": [
-    {"id": "A1", "service": "api-gateway", "severity": "critical", "timestamp": 5015, "message": "Circuit breaker open"},
-    {"id": "A2", "service": "redis", "severity": "high", "timestamp": 5010, "message": "Connection storm"}
-  ],
-  "initial_logs": [
-    {"t": 5000, "service": "auth-service", "msg": "Lost connection to message-queue", "level": "error"},
-    {"t": 5005, "service": "auth-service", "msg": "Retrying connection... looping", "level": "warn"},
-    {"t": 5010, "service": "redis", "msg": "Max clients reached", "level": "error"},
-    {"t": 5015, "service": "api-gateway", "msg": "Circuit breaker tripped for auth-service", "level": "fatal"}
-  ],
-  "initial_metrics": {
-    "api_gateway_cpu": 0.8,
-    "redis_connections": 10000
-  },
-  "queryable_logs": {
-    "auth-service": [
-      {"t": 5000, "service": "auth-service", "msg": "TCP Timeout to message-queue subnet", "level": "error"},
-      {"t": 5005, "service": "auth-service", "msg": "Entering retry loop causing redis connection leak", "level": "error"}
-    ],
-    "message-queue": [
-      {"t": 4999, "service": "message-queue", "msg": "Node isolated from auth subnet", "level": "warn"}
-    ],
-    "postgres": [
-      {"t": 4950, "service": "postgres", "msg": "Auto vacuum active", "level": "info"}
-    ],
     "api-gateway": [
-      {"t": 5015, "service": "api-gateway", "msg": "CPU spiked processing error responses", "level": "warn"}
+      "app-service"
+    ],
+    "app-service": [
+      "message-queue",
+      "auth-service"
+    ],
+    "auth-service": [
+      "redis"
+    ],
+    "message-queue": [],
+    "redis": []
+  },
+  "fault_service": "message-queue",
+  "fault_type": "network_partition",
+  "fault_severity": 0.08,
+  "playbook_effects": {
+    "restart_message_queue": {
+      "target": "message-queue",
+      "heal_amount": 0.92
+    },
+    "restart_redis": {
+      "target": "redis",
+      "heal_amount": 0.4
+    },
+    "restart_app": {
+      "target": "app-service",
+      "heal_amount": 0.3
+    },
+    "restart_gateway": {
+      "target": "api-gateway",
+      "heal_amount": 0.3
+    },
+    "rollback_config": {
+      "target": "message-queue",
+      "heal_amount": 0.5
+    },
+    "scale_postgres_pool": {
+      "target": "postgres",
+      "heal_amount": 0.3
+    }
+  },
+  "available_playbooks": [
+    "restart_message_queue",
+    "restart_redis",
+    "restart_app",
+    "restart_gateway",
+    "rollback_config",
+    "scale_postgres_pool"
+  ],
+  "service_logs": {
+    "message-queue": [
+      {
+        "msg": "Network partition detected \u2014 split brain",
+        "level": "fatal"
+      }
+    ],
+    "auth-service": [
+      {
+        "msg": "Retry storm: 500 retries/sec to message-queue (red herring symptom)",
+        "level": "warn"
+      }
     ],
     "redis": [
-      {"t": 5010, "service": "redis", "msg": "Connection storm from auth-service", "level": "error"}
+      {
+        "msg": "Key evictions spiking \u2014 auth retry flood (red herring)",
+        "level": "warn"
+      }
+    ],
+    "app-service": [
+      {
+        "msg": "Message queue timeout on publish",
+        "level": "error"
+      }
+    ],
+    "api-gateway": [
+      {
+        "msg": "Async operations failing \u2014 queue unreachable",
+        "level": "error"
+      }
     ]
   },
-  "queryable_metrics": {
-    "auth-service": {"tcp_retransmits": 500},
-    "message-queue": {"network_in": 0},
-    "postgres": {"cpu": 0.3}
-  },
   "red_herrings": [
-    {"service": "postgres", "fake_symptom": "slow vacuum", "reason": "normal operation"},
-    {"service": "api-gateway", "fake_symptom": "cpu spike", "reason": "symptom of high error rate"}
+    {
+      "service": "redis",
+      "symptom": "Key evictions from retry flood",
+      "explanation": "Downstream symptom of queue partition"
+    },
+    {
+      "service": "auth-service",
+      "symptom": "Retry storm",
+      "explanation": "Auth retrying queue ops \u2014 not root cause"
+    }
   ],
-  "affected_services": ["auth-service", "redis", "api-gateway"],
-  "valid_prevention_steps": ["fix retry bug", "add network redundancy"],
+  "max_steps": 20,
+  "affected_services": [
+    "message-queue",
+    "auth-service",
+    "redis",
+    "app-service",
+    "api-gateway"
+  ],
+  "valid_prevention_steps": [
+    "network_redundancy",
+    "circuit_breaker",
+    "retry_backoff"
+  ],
   "min_timeline_steps": 3,
-  "max_steps": 15,
-  "available_playbooks": [
-    "restart_redis", "scale_postgres_pool", "rollback_config",
-    "add_rate_limiting", "restart_message_queue", "flush_redis_cache"
-  ]
+  "correct_escalation_team": "infrastructure"
 }

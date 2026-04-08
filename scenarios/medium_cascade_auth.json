@@ -1,88 +1,106 @@
 {
-  "scenario_id": "medium_cascade_auth_001",
-  "task_id": "task_medium_2",
+  "scenario_id": "medium_cascade_auth",
   "difficulty": "medium",
-  "description": "Auth-service JWT validation bug after a silent config change causes 401 storms across all downstream services. Redis shows a brief connection spike that auto-resolved (red herring).",
-  "root_cause_service": "auth-service",
-  "root_cause_type": "jwt_bug",
-  "correct_diagnosis": "jwt_bug",
-  "correct_playbook": "rollback_config",
-  "correct_escalation_team": null,
+  "description": "Auth JWT validation bug with Redis red herring",
+  "services": [
+    "auth-service",
+    "redis",
+    "app-service",
+    "api-gateway"
+  ],
   "dependency_graph": {
-    "api-gateway": ["auth-service", "app-service"],
-    "auth-service": ["redis", "postgres"],
-    "app-service": ["postgres"],
-    "redis": [],
-    "postgres": []
-  },
-  "initial_alerts": [
-    {"id": "A1", "service": "api-gateway",  "severity": "critical", "timestamp": 3010, "message": "503 error rate at 78% — auth-service returning 500s on all validation requests"},
-    {"id": "A2", "service": "auth-service", "severity": "high",     "timestamp": 3002, "message": "JWT validation failure rate: 100% — NoneType error in token parser"},
-    {"id": "A3", "service": "redis",        "severity": "medium",   "timestamp": 2998, "message": "Brief connection spike: 180 connections (normal: 40). Auto-resolved to 45."},
-    {"id": "A4", "service": "app-service",  "severity": "medium",   "timestamp": 3015, "message": "All API calls rejected — auth middleware returning 401"}
-  ],
-  "initial_logs": [
-    {"t": 2995, "service": "redis",        "msg": "Connection spike to 180 clients (auto-scaling event)", "level": "warn"},
-    {"t": 2997, "service": "redis",        "msg": "Connection count normalised to 45 (spike resolved)", "level": "info"},
-    {"t": 3000, "service": "auth-service", "msg": "Config update applied: jwt_validation module v3.1.2", "level": "info"},
-    {"t": 3001, "service": "auth-service", "msg": "ERROR: jwt.decode() raised AttributeError: 'NoneType' has no attribute 'split'", "level": "error"},
-    {"t": 3002, "service": "auth-service", "msg": "FATAL: All JWT validation attempts failing — 100% error rate", "level": "fatal"},
-    {"t": 3010, "service": "api-gateway",  "msg": "Upstream auth-service returning HTTP 500 for all /validate calls", "level": "error"},
-    {"t": 3015, "service": "app-service",  "msg": "Auth middleware: received 401 for all user tokens — blocking requests", "level": "error"}
-  ],
-  "initial_metrics": {
-    "auth_service_error_rate_pct": 100.0,
-    "auth_service_jwt_failure_rate": 1.0,
-    "api_gateway_503_rate_pct": 78.0,
-    "api_gateway_latency_ms": 50,
-    "redis_connected_clients": 45,
-    "app_service_401_rate_pct": 100.0,
-    "postgres_query_time_ms": 30
-  },
-  "queryable_logs": {
-    "auth-service": [
-      {"t": 2999, "service": "auth-service", "msg": "Deploying config update: jwt_validation module v3.1.2", "level": "info"},
-      {"t": 3000, "service": "auth-service", "msg": "Config reload complete. JWT audience field now reads from AUDIENCE_V2 env var.", "level": "info"},
-      {"t": 3001, "service": "auth-service", "msg": "ERROR: jwt.decode() — token.header.get('kid') returned None. AttributeError in split().", "level": "error"},
-      {"t": 3002, "service": "auth-service", "msg": "100% of token validations failing since config update at t=3000", "level": "fatal"},
-      {"t": 3005, "service": "auth-service", "msg": "Stacktrace: auth/jwt_validator.py:88 — self.audience.split(',') fails when AUDIENCE_V2 is unset", "level": "error"}
-    ],
     "api-gateway": [
-      {"t": 3008, "service": "api-gateway", "msg": "Auth-service health: UNHEALTHY — 500 on /validate endpoint", "level": "error"},
-      {"t": 3010, "service": "api-gateway", "msg": "503 rate climbing: 78% of requests failing auth", "level": "error"},
-      {"t": 3012, "service": "api-gateway", "msg": "Circuit breaker HALF-OPEN for auth-service upstream", "level": "warn"}
-    ],
-    "redis": [
-      {"t": 2994, "service": "redis", "msg": "Auto-scaling event: temporarily added 140 connections from batch job", "level": "info"},
-      {"t": 2995, "service": "redis", "msg": "Connection spike: 180 clients (normal baseline: 40)", "level": "warn"},
-      {"t": 2997, "service": "redis", "msg": "Spike resolved: connections back to 45. No memory pressure.", "level": "info"}
+      "app-service"
     ],
     "app-service": [
-      {"t": 3012, "service": "app-service", "msg": "All user sessions invalidated by auth 401 responses", "level": "error"},
-      {"t": 3015, "service": "app-service", "msg": "User-facing error: 'Authentication failed. Please try again later.'", "level": "error"}
+      "auth-service"
     ],
-    "postgres": [
-      {"t": 2990, "service": "postgres", "msg": "LOG: checkpoint complete. Connections: 18/100.", "level": "info"},
-      {"t": 3005, "service": "postgres", "msg": "LOG: reduced query volume — app-service requests blocked by auth failure", "level": "info"}
+    "auth-service": [
+      "redis"
+    ],
+    "redis": []
+  },
+  "fault_service": "auth-service",
+  "fault_type": "jwt_bug",
+  "fault_severity": 0.1,
+  "playbook_effects": {
+    "rollback_config": {
+      "target": "auth-service",
+      "heal_amount": 0.9
+    },
+    "restart_redis": {
+      "target": "redis",
+      "heal_amount": 0.4
+    },
+    "restart_app": {
+      "target": "app-service",
+      "heal_amount": 0.4
+    },
+    "restart_gateway": {
+      "target": "api-gateway",
+      "heal_amount": 0.4
+    },
+    "scale_postgres_pool": {
+      "target": "postgres",
+      "heal_amount": 0.3
+    },
+    "flush_redis_cache": {
+      "target": "redis",
+      "heal_amount": 0.3
+    }
+  },
+  "available_playbooks": [
+    "rollback_config",
+    "restart_redis",
+    "restart_app",
+    "restart_gateway",
+    "scale_postgres_pool",
+    "flush_redis_cache"
+  ],
+  "service_logs": {
+    "auth-service": [
+      {
+        "msg": "JWT decode error: invalid signature for all tokens",
+        "level": "fatal"
+      }
+    ],
+    "redis": [
+      {
+        "msg": "Memory spike to 78% \u2014 auto-resolved (red herring)",
+        "level": "warn"
+      }
+    ],
+    "app-service": [
+      {
+        "msg": "401 Unauthorized from auth-service on every request",
+        "level": "error"
+      }
+    ],
+    "api-gateway": [
+      {
+        "msg": "Auth middleware rejecting all requests",
+        "level": "error"
+      }
     ]
   },
-  "queryable_metrics": {
-    "auth-service": {"error_rate_pct": 100.0, "jwt_failure_rate": 1.0, "latency_ms": 12, "config_version": 3.12},
-    "api-gateway":  {"503_rate_pct": 78.0, "latency_ms": 50, "rps": 310, "circuit_breaker_state": 1},
-    "redis":        {"connected_clients": 45, "memory_pct": 28.0, "hit_rate": 0.88, "peak_connections_1h": 180},
-    "app-service":  {"401_rate_pct": 100.0, "latency_ms": 40, "active_sessions": 0},
-    "postgres":     {"query_time_ms": 30, "connections": 18, "cpu_usage": 0.15}
-  },
   "red_herrings": [
-    {"service": "redis", "fake_symptom": "brief connection spike to 180 clients", "reason": "auto-scaling event from a batch job that completed before the incident started — connections normalised to 45 by t=2997, unrelated to auth failure at t=3000"}
+    {
+      "service": "redis",
+      "symptom": "Brief memory spike",
+      "explanation": "Auto-resolved cache warming \u2014 unrelated"
+    }
   ],
-  "affected_services": ["auth-service", "api-gateway", "app-service"],
-  "valid_prevention_steps": ["config_validation_tests", "canary_deploy_auth", "env_var_presence_check"],
-  "min_timeline_steps": 2,
   "max_steps": 15,
-  "available_playbooks": [
-    "restart_redis", "scale_postgres_pool", "rollback_config",
-    "add_rate_limiting", "restart_message_queue", "flush_redis_cache",
-    "flush_logs", "renew_certificate"
-  ]
+  "affected_services": [
+    "auth-service",
+    "app-service",
+    "api-gateway"
+  ],
+  "valid_prevention_steps": [
+    "jwt_validation_tests",
+    "canary_deploy",
+    "auth_integration_tests"
+  ],
+  "min_timeline_steps": 3,
+  "correct_escalation_team": null
 }

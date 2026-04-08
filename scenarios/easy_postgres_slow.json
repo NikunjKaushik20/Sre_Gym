@@ -1,83 +1,98 @@
 {
-  "scenario_id": "easy_postgres_slow_001",
-  "task_id": "task_easy_2",
+  "scenario_id": "easy_postgres_slow",
   "difficulty": "easy",
-  "description": "Postgres connection pool exhaustion causing app-service query failures and elevated api-gateway latency. Single root cause, no red herrings.",
-  "root_cause_service": "postgres",
-  "root_cause_type": "pool_exhaustion",
-  "correct_diagnosis": "pool_exhaustion",
-  "correct_playbook": "scale_postgres_pool",
-  "correct_escalation_team": null,
+  "description": "Postgres connection pool exhaustion causing cascading failures",
+  "services": [
+    "postgres",
+    "app-service",
+    "api-gateway"
+  ],
   "dependency_graph": {
-    "api-gateway": ["auth-service", "app-service"],
-    "app-service": ["postgres"],
-    "auth-service": ["postgres", "redis"],
-    "postgres": [],
-    "redis": []
-  },
-  "initial_alerts": [
-    {"id": "A1", "service": "postgres",    "severity": "critical", "timestamp": 1200, "message": "Active connections at 100/100 — all slots occupied, new connections rejected"},
-    {"id": "A2", "service": "app-service", "severity": "high",     "timestamp": 1205, "message": "Database query timeout: connection pool exhausted"},
-    {"id": "A3", "service": "api-gateway", "severity": "medium",   "timestamp": 1210, "message": "Elevated P99 latency: 4200ms (normal: 120ms)"}
-  ],
-  "initial_logs": [
-    {"t": 1190, "service": "postgres",    "msg": "LOG: connection count rising: 85/100 active", "level": "warn"},
-    {"t": 1195, "service": "postgres",    "msg": "LOG: connection count at 95/100 — approaching limit", "level": "warn"},
-    {"t": 1200, "service": "postgres",    "msg": "FATAL: remaining connection slots are reserved for non-replication superuser connections", "level": "fatal"},
-    {"t": 1202, "service": "app-service", "msg": "psycopg2.OperationalError: FATAL: too many connections for role 'app_user'", "level": "error"},
-    {"t": 1205, "service": "app-service", "msg": "Query timeout after 5000ms — no available connection from pool", "level": "error"},
-    {"t": 1210, "service": "api-gateway", "msg": "Upstream timeout: app-service response exceeded 4s", "level": "error"}
-  ],
-  "initial_metrics": {
-    "postgres_active_connections": 100,
-    "postgres_max_connections": 100,
-    "postgres_query_time_ms": 4200,
-    "postgres_waiting_queries": 47,
-    "app_service_error_rate_pct": 38.0,
-    "app_service_latency_ms": 4500,
-    "api_gateway_latency_ms": 4800,
-    "redis_memory_pct": 25.0
-  },
-  "queryable_logs": {
-    "postgres": [
-      {"t": 1180, "service": "postgres", "msg": "LOG: connection count at 72/100", "level": "info"},
-      {"t": 1185, "service": "postgres", "msg": "LOG: long-running query from app-service: SELECT * FROM orders JOIN products ... (running 12s)", "level": "warn"},
-      {"t": 1190, "service": "postgres", "msg": "LOG: connection count rising: 85/100 — leak suspected in app-service connection pool", "level": "warn"},
-      {"t": 1195, "service": "postgres", "msg": "LOG: 95/100 connections active — 5 idle-in-transaction for >60s", "level": "warn"},
-      {"t": 1200, "service": "postgres", "msg": "FATAL: remaining connection slots reserved for superuser. New connections rejected.", "level": "fatal"}
+    "api-gateway": [
+      "app-service"
     ],
     "app-service": [
-      {"t": 1198, "service": "app-service", "msg": "Connection pool: 0 idle, 50 active, 47 waiting", "level": "warn"},
-      {"t": 1202, "service": "app-service", "msg": "psycopg2.OperationalError: FATAL: too many connections for role 'app_user'", "level": "error"},
-      {"t": 1205, "service": "app-service", "msg": "Query timeout: connection acquisition failed after 5000ms", "level": "error"},
-      {"t": 1208, "service": "app-service", "msg": "Health check: DEGRADED — database unreachable", "level": "error"}
+      "postgres"
+    ],
+    "postgres": []
+  },
+  "fault_service": "postgres",
+  "fault_type": "pool_exhaustion",
+  "fault_severity": 0.12,
+  "playbook_effects": {
+    "scale_postgres_pool": {
+      "target": "postgres",
+      "heal_amount": 0.9
+    },
+    "restart_app": {
+      "target": "app-service",
+      "heal_amount": 0.4
+    },
+    "restart_gateway": {
+      "target": "api-gateway",
+      "heal_amount": 0.4
+    },
+    "restart_redis": {
+      "target": "redis",
+      "heal_amount": 0.4
+    },
+    "rollback_config": {
+      "target": "app-service",
+      "heal_amount": 0.3
+    },
+    "flush_redis_cache": {
+      "target": "redis",
+      "heal_amount": 0.3
+    }
+  },
+  "available_playbooks": [
+    "scale_postgres_pool",
+    "restart_app",
+    "restart_gateway",
+    "restart_redis",
+    "rollback_config",
+    "flush_redis_cache"
+  ],
+  "service_logs": {
+    "postgres": [
+      {
+        "msg": "FATAL: too many connections for role 'app_user'",
+        "level": "fatal"
+      },
+      {
+        "msg": "remaining connection slots reserved for superuser",
+        "level": "error"
+      }
+    ],
+    "app-service": [
+      {
+        "msg": "Connection pool exhausted: 0/50 available",
+        "level": "error"
+      },
+      {
+        "msg": "Timeout waiting for database connection",
+        "level": "error"
+      }
     ],
     "api-gateway": [
-      {"t": 1210, "service": "api-gateway", "msg": "Upstream timeout: app-service returned HTTP 503", "level": "error"},
-      {"t": 1212, "service": "api-gateway", "msg": "P99 latency spike: 4800ms (SLO: 200ms)", "level": "warn"}
-    ],
-    "auth-service": [
-      {"t": 1200, "service": "auth-service", "msg": "Auth requests processed normally (using redis cache, no postgres dependency)", "level": "info"}
-    ],
-    "redis": [
-      {"t": 1190, "service": "redis", "msg": "Cache operating normally: hit rate 92%, memory 25%", "level": "info"}
+      {
+        "msg": "503 from app-service \u2014 connection refused",
+        "level": "error"
+      }
     ]
   },
-  "queryable_metrics": {
-    "postgres":     {"active_connections": 100, "max_connections": 100, "idle_in_transaction": 5, "waiting_queries": 47, "query_time_ms": 4200, "cpu_usage": 0.82},
-    "app-service":  {"error_rate_pct": 38.0, "latency_ms": 4500, "db_pool_active": 50, "db_pool_waiting": 47, "db_pool_idle": 0},
-    "api-gateway":  {"latency_ms": 4800, "error_rate_pct": 12.0, "rps": 380},
-    "auth-service": {"error_rate_pct": 0.0, "latency_ms": 45, "cache_hit_rate": 0.92},
-    "redis":        {"memory_pct": 25.0, "connected_clients": 14, "hit_rate": 0.92}
-  },
   "red_herrings": [],
-  "affected_services": ["postgres", "app-service", "api-gateway"],
-  "valid_prevention_steps": ["connection_pool_monitoring", "idle_connection_timeout", "increase_max_connections"],
+  "max_steps": 10,
+  "affected_services": [
+    "postgres",
+    "app-service",
+    "api-gateway"
+  ],
+  "valid_prevention_steps": [
+    "connection_pool_monitoring",
+    "idle_connection_timeout",
+    "increase_max_connections"
+  ],
   "min_timeline_steps": 2,
-  "max_steps": 15,
-  "available_playbooks": [
-    "restart_redis", "scale_postgres_pool", "rollback_config",
-    "add_rate_limiting", "restart_message_queue", "flush_redis_cache",
-    "flush_logs", "renew_certificate"
-  ]
+  "correct_escalation_team": null
 }

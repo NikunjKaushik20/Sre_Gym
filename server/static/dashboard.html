@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRE-Gym | Incident Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#060a18;--surface:#0d1229;--surface2:#141b3d;--border:#1e2a5a;
+--accent:#00d4ff;--accent2:#7c3aed;--green:#00ff88;--red:#ff3366;--yellow:#ffb800;
+--text:#e2e8f0;--text2:#94a3b8;--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(6,10,24,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:1.1rem;font-weight:800;letter-spacing:2px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo span{font-weight:400;opacity:.7}
+nav a{color:var(--text2);text-decoration:none;font-size:.85rem;margin-left:1.5rem;transition:color .2s}
+nav a:hover{color:var(--accent)}
+/* HERO */
+.hero{padding:120px 2rem 60px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 50%,rgba(0,212,255,0.06) 0%,transparent 50%),radial-gradient(circle at 70% 50%,rgba(124,58,237,0.06) 0%,transparent 50%);animation:pulse 8s ease-in-out infinite alternate}
+@keyframes pulse{0%{transform:scale(1)}100%{transform:scale(1.1)}}
+.hero h1{font-size:3.5rem;font-weight:800;margin-bottom:1rem;line-height:1.1}
+.hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:1.15rem;color:var(--text2);max-width:700px;margin:0 auto 2rem;line-height:1.7}
+.badge-row{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;margin-bottom:2.5rem}
+.badge{background:var(--surface);border:1px solid var(--border);border-radius:50px;padding:.4rem 1rem;font-size:.75rem;font-weight:600;color:var(--accent);letter-spacing:.5px}
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.2rem;max-width:1000px;margin:0 auto 4rem;padding:0 2rem}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;text-align:center;transition:transform .2s,border-color .3s}
+.stat:hover{transform:translateY(-4px);border-color:var(--accent)}
+.stat .num{font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat .label{font-size:.8rem;color:var(--text2);margin-top:.3rem;text-transform:uppercase;letter-spacing:1px}
+/* SECTIONS */
+section{max-width:1100px;margin:0 auto 4rem;padding:0 2rem}
+section h2{font-size:2rem;font-weight:700;margin-bottom:.5rem}
+section h2 em{font-style:normal;color:var(--accent)}
+section .subtitle{color:var(--text2);margin-bottom:2rem;font-size:.95rem}
+/* GRAPH */
+.graph-container{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2rem;position:relative;overflow:hidden;min-height:350px}
+.graph-container canvas{width:100%;height:350px;display:block}
+/* FEATURE GRID */
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem}
+.feature{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;transition:border-color .3s}
+.feature:hover{border-color:var(--accent2)}
+.feature .icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1rem}
+.feature h3{font-size:1rem;font-weight:600;margin-bottom:.5rem}
+.feature p{font-size:.85rem;color:var(--text2);line-height:1.6}
+/* TABLE */
+.task-table{width:100%;border-collapse:collapse;font-size:.85rem}
+.task-table th{text-align:left;padding:.8rem 1rem;border-bottom:2px solid var(--border);color:var(--accent);font-weight:600;text-transform:uppercase;font-size:.7rem;letter-spacing:1px}
+.task-table td{padding:.7rem 1rem;border-bottom:1px solid var(--border)}
+.task-table tr:hover{background:rgba(0,212,255,0.03)}
+.diff-badge{padding:.2rem .6rem;border-radius:6px;font-size:.7rem;font-weight:600;text-transform:uppercase}
+.diff-easy{background:rgba(0,255,136,0.15);color:var(--green)}
+.diff-medium{background:rgba(255,184,0,0.15);color:var(--yellow)}
+.diff-hard{background:rgba(255,51,102,0.15);color:var(--red)}
+/* API DEMO */
+.api-block{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:1.5rem}
+.api-header{padding:1rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.8rem}
+.method{background:var(--green);color:#000;font-family:var(--mono);font-size:.75rem;font-weight:700;padding:.2rem .5rem;border-radius:4px}
+.endpoint{font-family:var(--mono);font-size:.85rem;color:var(--text2)}
+.api-body{padding:1.5rem}
+.api-body pre{background:var(--bg);border-radius:8px;padding:1rem;overflow-x:auto;font-family:var(--mono);font-size:.8rem;color:var(--green);line-height:1.6}
+/* SCORING */
+.score-bar{height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;margin-top:.3rem}
+.score-fill{height:100%;border-radius:4px;transition:width 1s ease}
+.score-row{display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
+.score-label{min-width:180px;font-size:.85rem}
+.score-val{font-family:var(--mono);font-size:.85rem;font-weight:600;min-width:40px;text-align:right}
+/* FOOTER */
+footer{text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);color:var(--text2);font-size:.8rem}
+footer a{color:var(--accent);text-decoration:none}
+/* Glow animation */
+@keyframes glow{0%,100%{box-shadow:0 0 20px rgba(0,212,255,0.1)}50%{box-shadow:0 0 40px rgba(0,212,255,0.2)}}
+.glow{animation:glow 3s ease-in-out infinite}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">SRE<span>-GYM</span></div>
+  <div>
+    <a href="#features">Features</a>
+    <a href="#tasks">Tasks</a>
+    <a href="#api">API</a>
+    <a href="#scoring">Scoring</a>
+    <a href="/docs" target="_blank">API Docs ↗</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="badge-row">
+    <span class="badge">OpenEnv Compatible</span>
+    <span class="badge">Deterministic Grading</span>
+    <span class="badge">12 Production Scenarios</span>
+    <span class="badge">Procedural Generation</span>
+  </div>
+  <h1>The <em>Incident Response</em><br>RL Environment</h1>
+  <p>Train and benchmark AI agents on cascading distributed system failures. Dependency graphs, red herrings, dense reward shaping, MTTR scoring. No LLM judges — fully deterministic.</p>
+</div>
+
+<div class="stats">
+  <div class="stat glow"><div class="num">12</div><div class="label">Curated Scenarios</div></div>
+  <div class="stat"><div class="num">∞</div><div class="label">Procedural Generation</div></div>
+  <div class="stat"><div class="num">6</div><div class="label">Action Types</div></div>
+  <div class="stat"><div class="num">0–1</div><div class="label">Deterministic Score</div></div>
+</div>
+
+<section id="graph">
+  <h2>Live Service <em>Topology</em></h2>
+  <p class="subtitle">Agents must traverse the dependency graph backwards from symptoms to root cause</p>
+  <div class="graph-container">
+    <canvas id="topoCanvas"></canvas>
+  </div>
+</section>
+
+<section id="features">
+  <h2>Why SRE-Gym <em>Wins</em></h2>
+  <p class="subtitle">Built for rigorous agent evaluation</p>
+  <div class="features">
+    <div class="feature"><div class="icon" style="background:rgba(0,212,255,0.15);color:var(--accent)">🧠</div><h3>Dependency Graph Reasoning</h3><p>Agents must trace microservice topologies backward from the 503 to the true root cause. No guessing.</p></div>
+    <div class="feature"><div class="icon" style="background:rgba(255,51,102,0.15);color:var(--red)">🎣</div><h3>Red Herring Injection</h3><p>Decoy alerts and metrics explicitly punish models that chase noise. Weak agents fall for the bait.</p></div>
+    <div class="feature"><div class="icon" style="background:rgba(0,255,136,0.15);color:var(--green)">⏱️</div><h3>MTTR-Based Scoring</h3><p>Faster resolution yields higher scores. Directly mirrors real-world SRE KPIs — Mean Time To Resolve.</p></div>
+    <div class="feature"><div class="icon" style="background:rgba(124,58,237,0.15);color:var(--accent2)">📈</div><h3>Dynamic Metric Evolution</h3><p>Metrics worsen every step without remediation. The incident escalates in real-time, creating MTTR pressure.</p></div>
+    <div class="feature"><div class="icon" style="background:rgba(255,184,0,0.15);color:var(--yellow)">🔍</div><h3>Partial Observability</h3><p>Dependency graph revealed incrementally as agents query services. No free information — explore to discover.</p></div>
+    <div class="feature"><div class="icon" style="background:rgba(0,212,255,0.15);color:var(--accent)">🎲</div><h3>Procedural Generation</h3><p>Infinite scenario variation from composable building blocks. Every seed creates a unique incident.</p></div>
+  </div>
+</section>
+
+<section id="tasks">
+  <h2>Scenario <em>Catalog</em></h2>
+  <p class="subtitle">12 curated scenarios across 3 difficulty tiers + infinite procedural generation</p>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+  <table class="task-table">
+    <thead><tr><th>ID</th><th>Scenario</th><th>Difficulty</th><th>Red Herrings</th><th>Max Steps</th></tr></thead>
+    <tbody>
+      <tr><td>task_easy_1</td><td>Redis OOM Crash</td><td><span class="diff-badge diff-easy">Easy</span></td><td>0</td><td>10</td></tr>
+      <tr><td>task_easy_2</td><td>Postgres Pool Exhaustion</td><td><span class="diff-badge diff-easy">Easy</span></td><td>0</td><td>10</td></tr>
+      <tr><td>task_easy_3</td><td>Config Typo CrashLoop</td><td><span class="diff-badge diff-easy">Easy</span></td><td>0</td><td>10</td></tr>
+      <tr><td>task_easy_4</td><td>Disk Full</td><td><span class="diff-badge diff-easy">Easy</span></td><td>0</td><td>10</td></tr>
+      <tr><td>task_medium_1</td><td>Redis Cascade Failure</td><td><span class="diff-badge diff-medium">Medium</span></td><td>1</td><td>15</td></tr>
+      <tr><td>task_medium_2</td><td>Auth JWT Bug</td><td><span class="diff-badge diff-medium">Medium</span></td><td>1</td><td>15</td></tr>
+      <tr><td>task_medium_3</td><td>Traffic Spike Overload</td><td><span class="diff-badge diff-medium">Medium</span></td><td>1</td><td>15</td></tr>
+      <tr><td>task_medium_4</td><td>TLS Cert Expiry</td><td><span class="diff-badge diff-medium">Medium</span></td><td>1</td><td>15</td></tr>
+      <tr><td>task_hard_1</td><td>Config Cascade + Postmortem</td><td><span class="diff-badge diff-hard">Hard</span></td><td>2</td><td>20</td></tr>
+      <tr><td>task_hard_2</td><td>Network Partition</td><td><span class="diff-badge diff-hard">Hard</span></td><td>2</td><td>20</td></tr>
+      <tr><td>task_hard_3</td><td>Deploy Regression</td><td><span class="diff-badge diff-hard">Hard</span></td><td>2</td><td>20</td></tr>
+      <tr><td>task_hard_4</td><td>DNS Misconfiguration</td><td><span class="diff-badge diff-hard">Hard</span></td><td>2</td><td>20</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="api">
+  <h2>Agent <em>API</em></h2>
+  <p class="subtitle">Six structured action types for incident response</p>
+  <div class="api-block"><div class="api-header"><span class="method">POST</span><span class="endpoint">/step</span></div><div class="api-body"><pre>{
+  "action_type": "query_logs",
+  "payload": {"service": "redis", "window": "last_5min"}
+}</pre></div></div>
+  <div class="api-block"><div class="api-header"><span class="method">POST</span><span class="endpoint">/step</span></div><div class="api-body"><pre>{
+  "action_type": "submit_diagnosis",
+  "payload": {"suspected_service": "redis", "suspected_cause": "memory_leak"}
+}</pre></div></div>
+  <div class="api-block"><div class="api-header"><span class="method">POST</span><span class="endpoint">/step</span></div><div class="api-body"><pre>{
+  "action_type": "submit_postmortem",
+  "payload": {
+    "root_cause": "memory_leak",
+    "affected_services": ["redis", "api-gateway"],
+    "timeline_steps": 4,
+    "prevention_steps": ["redis_memory_alert", "eviction_policy"]
+  }
+}</pre></div></div>
+</section>
+
+<section id="scoring">
+  <h2>Scoring <em>Breakdown</em></h2>
+  <p class="subtitle">Rewards are deterministic, dense, and clamped to [0.0, 1.0]</p>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem">
+    <div class="score-row"><span class="score-label">🎯 Correct Diagnosis</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:40%;background:var(--green)"></div></div></div><span class="score-val">+0.40</span></div>
+    <div class="score-row"><span class="score-label">🔧 Correct Cause</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:20%;background:var(--accent)"></div></div></div><span class="score-val">+0.20</span></div>
+    <div class="score-row"><span class="score-label">🛠️ Correct Remediation</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:40%;background:var(--accent2)"></div></div></div><span class="score-val">+0.40</span></div>
+    <div class="score-row"><span class="score-label">🎣 Red Herring Diagnosis</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:20%;background:var(--red)"></div></div></div><span class="score-val">−0.20</span></div>
+    <div class="score-row"><span class="score-label">⏱️ MTTR Efficiency Bonus</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:25%;background:var(--yellow)"></div></div></div><span class="score-val">×0.25</span></div>
+    <div class="score-row"><span class="score-label">📉 Per-Step Cost</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:5%;background:var(--red)"></div></div></div><span class="score-val">−0.01</span></div>
+  </div>
+</section>
+
+<footer>
+  <p>SRE-Gym — Deterministic RL Environment for Production Incident Response</p>
+  <p style="margin-top:.5rem">Built for <a href="https://huggingface.co/spaces">Hugging Face Spaces</a> · <a href="/docs">API Documentation</a></p>
+</footer>
+
+<script>
+// Animated topology graph
+const canvas=document.getElementById('topoCanvas');
+const ctx=canvas.getContext('2d');
+let W,H;
+function resize(){W=canvas.parentElement.clientWidth;H=350;canvas.width=W*2;canvas.height=H*2;ctx.scale(2,2)}
+resize();window.addEventListener('resize',resize);
+
+const nodes=[
+  {id:'api-gateway',x:0.5,y:0.15,color:'#ff3366',pulse:true},
+  {id:'auth-service',x:0.3,y:0.45,color:'#ffb800',pulse:false},
+  {id:'app-service',x:0.7,y:0.45,color:'#00d4ff',pulse:false},
+  {id:'redis',x:0.15,y:0.78,color:'#ff3366',pulse:true},
+  {id:'postgres',x:0.5,y:0.78,color:'#00ff88',pulse:false},
+  {id:'message-queue',x:0.85,y:0.78,color:'#7c3aed',pulse:false}
+];
+const edges=[
+  ['api-gateway','auth-service'],['api-gateway','app-service'],
+  ['auth-service','redis'],['auth-service','postgres'],
+  ['app-service','postgres'],['app-service','message-queue']
+];
+
+let time=0;
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  // Draw edges
+  edges.forEach(([from,to])=>{
+    const a=nodes.find(n=>n.id===from),b=nodes.find(n=>n.id===to);
+    const ax=a.x*W,ay=a.y*H,bx=b.x*W,by=b.y*H;
+    ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);
+    const isPulse=a.pulse||b.pulse;
+    ctx.strokeStyle=isPulse?`rgba(255,51,102,${0.3+Math.sin(time*2)*0.2})`:'rgba(30,42,90,0.6)';
+    ctx.lineWidth=isPulse?2:1;ctx.stroke();
+    // Animated packet
+    if(isPulse){
+      const t=(time*0.5)%1;
+      const px=ax+(bx-ax)*t,py=ay+(by-ay)*t;
+      ctx.beginPath();ctx.arc(px,py,3,0,Math.PI*2);
+      ctx.fillStyle='#ff3366';ctx.fill();
+    }
+  });
+  // Draw nodes
+  nodes.forEach(n=>{
+    const x=n.x*W,y=n.y*H;
+    // Glow
+    if(n.pulse){
+      const r=22+Math.sin(time*3)*5;
+      const grad=ctx.createRadialGradient(x,y,0,x,y,r);
+      grad.addColorStop(0,n.color+'60');grad.addColorStop(1,'transparent');
+      ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=grad;ctx.fill();
+    }
+    // Circle
+    ctx.beginPath();ctx.arc(x,y,12,0,Math.PI*2);
+    ctx.fillStyle='#0d1229';ctx.fill();
+    ctx.strokeStyle=n.color;ctx.lineWidth=2;ctx.stroke();
+    // Label
+    ctx.fillStyle='#e2e8f0';ctx.font='500 11px Inter,sans-serif';
+    ctx.textAlign='center';ctx.fillText(n.id,x,y+28);
+  });
+  time+=0.016;
+  requestAnimationFrame(draw);
+}
+draw();
+</script>
+</body>
+</html>
