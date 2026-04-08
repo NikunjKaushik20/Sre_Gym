@@ -2,6 +2,14 @@
 import re
 from difflib import SequenceMatcher
 
+# ── Score clamping — evaluator requires strictly (0, 1) exclusive ─────────────
+_SCORE_MIN = 0.01
+_SCORE_MAX = 0.99
+
+def _clamp_score(x: float) -> float:
+    """Clamp a score to (_SCORE_MIN, _SCORE_MAX) and round to 4 decimal places."""
+    return round(max(_SCORE_MIN, min(float(x), _SCORE_MAX)), 4)
+
 # ── Strict synonym map — ONLY exact canonical variants, no loose aliases ──────
 # Intentionally narrow: "config" alone does NOT match "bad_config_deploy"
 _SYNONYMS = {
@@ -99,7 +107,7 @@ def grade_easy(health_score, state, scenario):
                 r += 0.25
             # Applying the right fix without correct diagnosis = 0 credit
 
-    return round(max(0.001, min(r, 0.999)), 3)
+    return _clamp_score(r)
 
 
 # ── MEDIUM ────────────────────────────────────────────────────────────────────
@@ -150,7 +158,7 @@ def grade_medium(health_score, state, scenario):
                 r += 0.15
             # Lucky fix without diagnosis = 0 (was +0.03 — removed)
 
-    return round(max(0.001, min(r, 0.999)), 3)
+    return _clamp_score(r)
 
 
 # ── HARD ──────────────────────────────────────────────────────────────────────
@@ -193,7 +201,7 @@ def grade_hard(health_score, postmortem, state, scenario):
 
     # Guard: if postmortem is empty or not a dict, skip all sub-scores
     if not isinstance(postmortem, dict) or not postmortem:
-        return round(max(0.001, min(r, 0.999)), 3)
+        return _clamp_score(r)
 
     # ── Postmortem sub-scores ──────────────────────────────────────────
 
@@ -228,7 +236,7 @@ def grade_hard(health_score, postmortem, state, scenario):
         r += 0.25 * prev_overlap
     # below 0.75 = zero (was 0.40 partial floor — removed)
 
-    return round(max(0.001, min(r, 0.999)), 3)
+    return _clamp_score(r)
 
 
 # ── MTTR BONUS ────────────────────────────────────────────────────────────────
@@ -251,7 +259,7 @@ def compute_mttr_bonus(base, steps, max_steps):
       = (0.50 * 0.75) + (0.80 * 0.25) = 0.375 + 0.20 = 0.575  ← inflated
     """
     eff = max(0.0, 1.0 - steps / max(1, max_steps))
-    return round(max(0.001, min((base * 0.80) + (eff * 0.20), 0.999)), 3)
+    return _clamp_score((base * 0.80) + (eff * 0.20))
 
 
 # ── PUBLIC ALIASES (keep test suite compatible) ───────────────────────────────
