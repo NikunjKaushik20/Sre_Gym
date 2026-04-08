@@ -219,7 +219,7 @@ class SREEnvironment(Environment):
 
     def _do_close_incident(self, pl):
         score = self._grade(pl)
-        final = max(0.0, score * 0.5)
+        final = max(0.001, min(score * 0.5, 0.999))
         return self._obs(final, True, f"Incident closed prematurely. Score: {final:.3f}")
 
     # ── GRADING ───────────────────────────────────────────────────────
@@ -245,7 +245,7 @@ class SREEnvironment(Environment):
             return obs
         if self._state.step_count >= self._scenario["max_steps"]:
             score = self._grade(pl)
-            final = max(0.0, score * 0.6)
+            final = max(0.001, min(score * 0.6, 0.999))
             return self._obs(final, True, f"Max steps exceeded. Timeout score: {final:.3f}")
         return obs
 
