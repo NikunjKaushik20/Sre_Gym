@@ -12,7 +12,7 @@ from uuid import uuid4
 from openenv.core.env_server.interfaces import Environment
 from openenv.core.env_server.types import Action, Observation, State
 from models import SREAction, SREObservation, SREState, Alert, LogEntry, IncidentState
-from server.graders import grade_easy, grade_medium, grade_hard, compute_mttr_bonus
+from server.graders import grade_easy, grade_medium, grade_hard, compute_mttr_bonus, _SCORE_MIN, _SCORE_MAX
 
 SCENARIOS_DIR = Path(__file__).parent.parent / "scenarios"
 TASK_MAP = {
@@ -219,7 +219,7 @@ class SREEnvironment(Environment):
 
     def _do_close_incident(self, pl):
         score = self._grade(pl)
-        final = max(0.01, min(score * 0.5, 0.99))
+        final = max(_SCORE_MIN, min(score * 0.5, _SCORE_MAX))
         return self._obs(final, True, f"Incident closed prematurely. Score: {final:.3f}")
 
     # ── GRADING ───────────────────────────────────────────────────────
@@ -245,7 +245,7 @@ class SREEnvironment(Environment):
             return obs
         if self._state.step_count >= self._scenario["max_steps"]:
             score = self._grade(pl)
-            final = max(0.01, min(score * 0.6, 0.99))
+            final = max(_SCORE_MIN, min(score * 0.6, _SCORE_MAX))
             return self._obs(final, True, f"Max steps exceeded. Timeout score: {final:.3f}")
         return obs
 
@@ -278,8 +278,19 @@ class SREEnvironment(Environment):
         metrics["system_avg_health"] = round(self._avg_health(), 3)
 
         self._state.cumulative_reward = round(self._state.cumulative_reward + reward, 3)
+
+        # ── Nuclear clamping: when episode terminates, force ALL score-like
+        #    fields into (0, 1) exclusive. The evaluator may read from reward,
+        #    cumulative_reward, metadata, or state — clamp everywhere.
+        obs_reward = round(reward, 3)
+        cum_reward = self._state.cumulative_reward
+        if done:
+            obs_reward = round(max(_SCORE_MIN, min(float(obs_reward), _SCORE_MAX)), 4)
+            cum_reward = round(max(_SCORE_MIN, min(float(cum_reward), _SCORE_MAX)), 4)
+            self._state.cumulative_reward = cum_reward
+
         return SREObservation(
-            done=done, reward=round(reward, 3), alerts=alerts,
+            done=done, reward=obs_reward, alerts=alerts,
             logs=sorted(self._queried_logs, key=lambda l: l.t)[-50:],
             metrics=metrics, dependency_graph=vis_g,
             incident_state=IncidentState(
@@ -290,7 +301,7 @@ class SREEnvironment(Environment):
                 max_steps=s.get("max_steps", 15)),
             available_playbooks=s.get("available_playbooks", []),
             message=msg,
-            metadata={"cumulative_reward": self._state.cumulative_reward,
+            metadata={"cumulative_reward": cum_reward,
                       "system_health": round(self._avg_health(), 3),
                       "fault_fixed": self._fault_fixed,
                       "scenario_id": self._state.scenario_id,

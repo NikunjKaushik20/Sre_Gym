@@ -197,11 +197,13 @@ def test_grade_easy_wrong_service():
                         diagnosed_cause="memory_leak",
                         remediated=True, remediation_applied="restart_redis")
     score = grade_easy(0.0, state, s)  # no health recovery either
-    assert score == 0.0, f"Wrong service + no health = 0.0, got {score}"
+    # Score clamps to _SCORE_MIN (0.01) — evaluator requires strictly (0, 1)
+    assert score == 0.01, f"Wrong service + no health = 0.01 (clamped), got {score}"
 
 def test_grade_easy_nothing_done():
     s = _load_scenario("easy_redis_oom.json")
-    assert grade_easy(0.0, _make_state(), s) == 0.0
+    # Score clamps to _SCORE_MIN (0.01) — evaluator requires strictly (0, 1)
+    assert grade_easy(0.0, _make_state(), s) == 0.01
 
 
 # ── GRADER: grade_medium ──
@@ -220,7 +222,8 @@ def test_grade_medium_no_op_agent_scores_zero():
     """A no-op agent with 0 health recovery should score exactly 0.0."""
     s = _load_scenario("medium_cascade_redis.json")
     score = grade_medium(0.0, _make_state(), s)
-    assert score == 0.0, f"No-op agent should score 0.0, got {score}"
+    # Score clamps to _SCORE_MIN (0.01) — evaluator requires strictly (0, 1)
+    assert score == 0.01, f"No-op agent should score 0.01 (clamped), got {score}"
 
 def test_grade_medium_red_herring_penalty():
     """Chasing a red herring triggers a -0.40 penalty → score must be very low."""
@@ -228,8 +231,8 @@ def test_grade_medium_red_herring_penalty():
     state = _make_state(diagnosed=True, diagnosed_service="postgres",
                         escalated=False)
     score = grade_medium(0.0, state, s)
-    # Red herring penalty (-0.40) floors at 0.0 after clamping
-    assert score == 0.0, f"Red herring agent clamps to 0.0, got {score}"
+    # Red herring penalty (-0.40) floors at _SCORE_MIN (0.01) — evaluator requires strictly (0, 1)
+    assert score == 0.01, f"Red herring agent clamps to 0.01, got {score}"
 
 
 # ── GRADER: grade_hard ──
@@ -293,7 +296,7 @@ def test_grade_hard_returns_in_range():
         "prevention_steps": ["fix retry bug", "add network redundancy"],
     }
     score = grade_hard(0.5, payload, _make_state(), s)
-    assert 0.0 <= score <= 1.0
+    assert 0.0 < score < 1.0, f"Score must be strictly in (0,1), got {score}"
 
 
 # ── MTTR BONUS ──
@@ -312,7 +315,7 @@ def test_mttr_always_in_range():
     for base in [0.0, 0.5, 1.0]:
         for steps in [1, 7, 15]:
             result = compute_mttr_bonus(base, steps, 15)
-            assert 0.0 <= result <= 1.0
+            assert 0.0 < result < 1.0, f"MTTR result must be strictly in (0,1), got {result}"
 
 
 # ── ENVIRONMENT INTEGRATION ──
@@ -453,7 +456,10 @@ class TestSREEnvironment:
             action_type="close_incident", payload={}
         ))
         assert obs.done is True
-        assert obs.reward <= 0.0
+        # Terminal rewards are clamped to (0, 1) exclusive — evaluator requires this
+        assert 0.0 < obs.reward < 1.0, f"Terminal reward must be in (0,1), got {obs.reward}"
+        # Close incident should give a very low score
+        assert obs.reward <= 0.05, f"Close incident should be penalised, got {obs.reward}"
 
     @pytest.mark.parametrize("task_id", [
         "task_easy_1", "task_easy_2", "task_easy_3", "task_easy_4",
