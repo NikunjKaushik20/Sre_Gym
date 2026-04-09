@@ -80,7 +80,13 @@ SYSTEM_PROMPT = """You are an expert Site Reliability Engineer responding to a p
 - Prevention steps < 75% overlap with valid set: 0 credit
 """
 
-TASKS = ["echo", "echo_variant1", "echo_variant2"]
+TASKS = [
+    "task_easy_1", "task_easy_2", "task_easy_3", "task_easy_4",
+    "task_medium_1", "task_medium_2", "task_medium_3", "task_medium_4",
+    "task_hard_1", "task_hard_2", "task_hard_3", "task_hard_4",
+]
+
+VERBOSE = os.getenv("VERBOSE", "0") == "1"
 
 
 # ── HTTP helpers (no local package dependency) ──
@@ -156,11 +162,12 @@ def parse_action(response_text):
 def run_task(client, task_name):
     """Run a single task and return the TERMINAL reward only."""
     TASK_NAME = task_name
-    print(f"[START] task_name={TASK_NAME}")
+    if VERBOSE:
+        print(f"[START] task_name={TASK_NAME}")
 
     score = 0.5
     epsilon = 1e-6
-    rewards = []
+    terminal_reward = None
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     try:
@@ -181,7 +188,8 @@ def run_task(client, task_name):
                 llm_output = response.choices[0].message.content
                 messages.append({"role": "assistant", "content": llm_output})
             except Exception as e:
-                print(f"[STEP] step={step_num} error=LLM call failed: {e}")
+                if VERBOSE:
+                    print(f"[STEP] step={step_num} error=LLM call failed: {e}")
                 break
 
             message = llm_output
@@ -191,7 +199,8 @@ def run_task(client, task_name):
             try:
                 action_dict = parse_action(message)
             except Exception as e:
-                print(f"[STEP] step={step_num} error=Failed to parse JSON: {e}")
+                if VERBOSE:
+                    print(f"[STEP] step={step_num} error=Failed to parse JSON: {e}")
                 action_dict = {"action_type": "query_logs", "payload": {"service": "api-gateway"}}
 
             action_type = action_dict.get("action_type", "query_logs")
@@ -202,40 +211,43 @@ def run_task(client, task_name):
             try:
                 result = step_env(action_type, payload)
             except Exception as e:
-                print(f"[STEP] step={step_num} error=Env step failed: {e}")
+                if VERBOSE:
+                    print(f"[STEP] step={step_num} error=Env step failed: {e}")
                 break
 
             obs = result.get("observation", {})
             step_reward = result.get("reward", 0.0)
             done = result.get("done", False)
 
-            rewards.append(step_reward)
-
-            print(
-                f"[STEP] step={step_num} "
-                f"action={action_type} "
-                f"step_reward={step_reward:.3f} "
-                f"done={done}"
-            )
+            if VERBOSE:
+                print(
+                    f"[STEP] step={step_num} "
+                    f"action={action_type} "
+                    f"step_reward={step_reward:.3f} "
+                    f"done={done}"
+                )
 
             if done:
+                terminal_reward = step_reward
                 break
 
-        raw_score = sum(rewards) / MAX_TOTAL_REWARD if MAX_TOTAL_REWARD > 0 else 0.0
+        raw_score = terminal_reward if terminal_reward is not None else 0.5
         score = min(max(raw_score, epsilon), 1.0 - epsilon)
 
     except Exception as e:
-        print(f"[ERROR] Task failed with exception: {e}")
-        print("[END]")
+        if VERBOSE:
+            print(f"[ERROR] Task failed with exception: {e}")
+            print("[END]")
         score = 0.5  # safe fallback inside range
         return score
 
-    print("[END]")
+    if VERBOSE:
+        print("[END]")
     return score
 
 
 def main():
-    """Run baseline inference across all tasks."""
+    """Run baseline inference across all OpenEnv tasks and emit parser-safe JSON."""
     client = OpenAI(api_key=HF_TOKEN or "dummy", base_url=API_BASE_URL)
     results = {}
 
@@ -243,13 +255,8 @@ def main():
         score = run_task(client, task_name)
         results[task_name] = score
 
-    print("\n=== BASELINE RESULTS ===")
-    for tid, score in results.items():
-        print(f"  {tid}: {score:.6f}")
-
-    if results:
-        all_scores = list(results.values())
-        print(f"\n  Overall avg: {sum(all_scores)/len(all_scores):.6f}")
+    # Submission parsers expect clean machine-readable output.
+    print(json.dumps(results, ensure_ascii=True))
 
 
 if __name__ == "__main__":
