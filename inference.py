@@ -162,12 +162,12 @@ def parse_action(response_text):
 def run_task(client, task_name):
     """Run a single task and return the TERMINAL reward only."""
     TASK_NAME = task_name
-    if VERBOSE:
-        print(f"[START] task_name={TASK_NAME}")
+    print(f"[START] task={TASK_NAME}", flush=True)
 
     score = 0.5
     epsilon = 1e-6
     terminal_reward = None
+    steps_executed = 0
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     try:
@@ -218,13 +218,23 @@ def run_task(client, task_name):
             obs = result.get("observation", {})
             step_reward = result.get("reward", 0.0)
             done = result.get("done", False)
+            steps_executed = step_num
+
+            print(
+                f"[STEP] step={step_num} "
+                f"action={action_type} "
+                f"reward={float(step_reward):.6f} "
+                f"done={done}",
+                flush=True,
+            )
 
             if VERBOSE:
                 print(
-                    f"[STEP] step={step_num} "
+                    f"[DEBUG] step={step_num} "
                     f"action={action_type} "
                     f"step_reward={step_reward:.3f} "
-                    f"done={done}"
+                    f"done={done}",
+                    flush=True,
                 )
 
             if done:
@@ -237,17 +247,16 @@ def run_task(client, task_name):
     except Exception as e:
         if VERBOSE:
             print(f"[ERROR] Task failed with exception: {e}")
-            print("[END]")
         score = 0.5  # safe fallback inside range
+        print(f"[END] task={TASK_NAME} score={score:.6f} steps={steps_executed}", flush=True)
         return score
 
-    if VERBOSE:
-        print("[END]")
+    print(f"[END] task={TASK_NAME} score={score:.6f} steps={steps_executed}", flush=True)
     return score
 
 
 def main():
-    """Run baseline inference across all OpenEnv tasks and emit parser-safe JSON."""
+    """Run baseline inference across all OpenEnv tasks and emit structured stdout blocks."""
     client = OpenAI(api_key=HF_TOKEN or "dummy", base_url=API_BASE_URL)
     results = {}
 
@@ -255,8 +264,9 @@ def main():
         score = run_task(client, task_name)
         results[task_name] = score
 
-    # Submission parsers expect clean machine-readable output.
-    print(json.dumps(results, ensure_ascii=True))
+    # Optional debug summary only; keep validator-facing blocks above stable.
+    if VERBOSE:
+        print(json.dumps(results, ensure_ascii=True), flush=True)
 
 
 if __name__ == "__main__":
