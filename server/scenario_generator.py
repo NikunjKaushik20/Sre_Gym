@@ -174,34 +174,63 @@ def generate_scenario(difficulty: str = "easy", seed: Optional[int] = None) -> d
     correct_pb = template["playbook"]
     available = list(set([correct_pb] + rng.sample(PLAYBOOK_POOL, min(5, len(PLAYBOOK_POOL)))))
 
+    # Runtime env expects per-playbook target/heal_amount mappings.
+    playbook_effects = {}
+    for pb in available:
+        target = root_service if pb == correct_pb else rng.choice(services)
+        heal_amount = round(rng.uniform(0.45, 0.85), 2) if pb == correct_pb else round(rng.uniform(0.15, 0.45), 2)
+        playbook_effects[pb] = {
+            "target": target,
+            "heal_amount": heal_amount,
+        }
+
+    # Runtime env reads service_logs[service] -> [{msg, level}, ...]
+    service_logs = {svc: [] for svc in services}
+    for l in logs:
+        service_logs.setdefault(l["service"], []).append({
+            "msg": l["msg"],
+            "level": l["level"],
+        })
+
     # Prevention
     prevention = rng.sample(PREVENTION_POOL, min(3, len(PREVENTION_POOL)))
 
     max_steps = {"easy": 10, "medium": 15, "hard": 20}[difficulty]
 
-    return {
+    scenario = {
         "scenario_id": f"gen_{difficulty}_{seed or 'random'}",
         "task_id": f"task_gen_{difficulty}",
         "difficulty": difficulty,
         "description": f"Generated {difficulty} scenario: {cause_type} in {root_service}",
-        "root_cause_service": root_service,
-        "root_cause_type": cause_type,
-        "correct_diagnosis": template["cause"],
-        "correct_playbook": correct_pb,
-        "correct_escalation_team": "infrastructure" if difficulty == "hard" else None,
+
+        # Canonical runtime keys used by SREEnvironment
+        "services": services,
+        "fault_service": root_service,
+        "fault_type": template["cause"],
+        "fault_severity": round(rng.uniform(0.05, 0.18), 2),
         "dependency_graph": graph,
-        "initial_alerts": alerts,
-        "initial_logs": logs,
-        "initial_metrics": metrics,
-        "queryable_logs": q_logs,
-        "queryable_metrics": q_metrics,
+        "playbook_effects": playbook_effects,
+        "available_playbooks": available,
+        "service_logs": service_logs,
         "red_herrings": red_herrings,
         "affected_services": services,
         "valid_prevention_steps": prevention,
         "min_timeline_steps": {"easy": 2, "medium": 3, "hard": 4}[difficulty],
         "max_steps": max_steps,
-        "available_playbooks": available,
+
+        # Backward-compatible aliases retained for existing consumers
+        "root_cause_service": root_service,
+        "root_cause_type": cause_type,
+        "correct_diagnosis": template["cause"],
+        "correct_playbook": correct_pb,
+        "correct_escalation_team": "infrastructure" if difficulty == "hard" else None,
+        "initial_alerts": alerts,
+        "initial_logs": logs,
+        "initial_metrics": metrics,
+        "queryable_logs": q_logs,
+        "queryable_metrics": q_metrics,
     }
+    return scenario
 
 
 if __name__ == "__main__":

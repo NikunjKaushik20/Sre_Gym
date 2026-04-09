@@ -338,6 +338,198 @@
       margin-bottom: 2.5rem
     }
 
+    /* INTERACTIVE CONSOLE */
+    .interactive-shell {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .interactive-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .ctl-group {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .9rem;
+      margin-bottom: .75rem;
+      background: #fcfdfd;
+    }
+
+    .ctl-title {
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .7px;
+      text-transform: uppercase;
+      color: #374151;
+      margin-bottom: .6rem;
+    }
+
+    .ctl-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .6rem;
+      margin-bottom: .55rem;
+    }
+
+    .ctl-row.single {
+      grid-template-columns: 1fr;
+    }
+
+    .ctl-row.triple {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .ctl-input,
+    .ctl-select,
+    .ctl-textarea {
+      width: 100%;
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: .55rem .65rem;
+      font-size: .8rem;
+      font-family: var(--font);
+      color: var(--text);
+      background: white;
+    }
+
+    .ctl-textarea {
+      min-height: 88px;
+      font-family: var(--mono);
+      font-size: .74rem;
+      resize: vertical;
+    }
+
+    .ctl-btn {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: .55rem .7rem;
+      font-size: .78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .ctl-btn.primary {
+      background: var(--green);
+      color: white;
+    }
+
+    .ctl-btn.primary:hover {
+      background: #047857;
+    }
+
+    .ctl-btn.neutral {
+      background: #f3f4f6;
+      color: #111827;
+      border-color: var(--border);
+    }
+
+    .ctl-btn.neutral:hover {
+      background: #e5e7eb;
+    }
+
+    .ctl-btn.warn {
+      background: #f59e0b;
+      color: white;
+    }
+
+    .output-card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: .75rem;
+      background: white;
+    }
+
+    .output-head {
+      padding: .55rem .75rem;
+      border-bottom: 1px solid var(--border);
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      font-weight: 700;
+      color: #374151;
+      background: #f9fafb;
+    }
+
+    .output-body {
+      padding: .7rem .75rem;
+      font-size: .76rem;
+      line-height: 1.45;
+      color: var(--text2);
+      max-height: 180px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: var(--mono);
+    }
+
+    .kv-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: .5rem;
+      margin-bottom: .7rem;
+    }
+
+    .kv {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .45rem .55rem;
+      background: #fcfcfc;
+    }
+
+    .kv-k {
+      font-size: .63rem;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--text3);
+      margin-bottom: .2rem;
+    }
+
+    .kv-v {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--text);
+      font-family: var(--mono);
+    }
+
+    .pill-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35rem;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: .2rem .5rem;
+      font-size: .67rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      color: #374151;
+    }
+
+    .status-inline {
+      font-size: .72rem;
+      font-weight: 600;
+      margin-left: .45rem;
+    }
+
+    .status-ok {
+      color: var(--green);
+    }
+
+    .status-err {
+      color: var(--red);
+    }
+
     .feature {
       background: var(--white);
       border: 1px solid var(--border);
@@ -630,6 +822,19 @@
         grid-template-columns: 1fr
       }
 
+      .interactive-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .kv-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .ctl-row,
+      .ctl-row.triple {
+        grid-template-columns: 1fr;
+      }
+
       .hero-title {
         font-size: 1.8rem
       }
@@ -651,7 +856,6 @@
       </div>
     </div>
 
-    </div>
   </nav>
 
   <!-- MAIN -->
@@ -707,6 +911,145 @@
     </div>
     <div class="topo-box">
       <canvas id="topoCanvas"></canvas>
+    </div>
+
+    <!-- INTERACTIVE CONSOLE -->
+    <div class="section-header">
+      <div class="section-title">Interactive Incident Console</div>
+      <div class="section-tag">Live via /reset and /step</div>
+    </div>
+    <div class="interactive-shell">
+      <div class="interactive-grid">
+        <div>
+          <div class="ctl-group">
+            <div class="ctl-title">Session Control</div>
+            <div class="ctl-row">
+              <select id="taskSelect" class="ctl-select">
+                <option value="task_easy_1">task_easy_1</option>
+                <option value="task_easy_2">task_easy_2</option>
+                <option value="task_easy_3">task_easy_3</option>
+                <option value="task_easy_4">task_easy_4</option>
+                <option value="task_medium_1">task_medium_1</option>
+                <option value="task_medium_2">task_medium_2</option>
+                <option value="task_medium_3">task_medium_3</option>
+                <option value="task_medium_4">task_medium_4</option>
+                <option value="task_hard_1">task_hard_1</option>
+                <option value="task_hard_2">task_hard_2</option>
+                <option value="task_hard_3">task_hard_3</option>
+                <option value="task_hard_4">task_hard_4</option>
+              </select>
+              <button id="resetBtn" class="ctl-btn primary">Reset Episode</button>
+            </div>
+            <div class="ctl-row">
+              <button id="stateBtn" class="ctl-btn neutral">Fetch State</button>
+              <span id="uiStatus" class="status-inline status-ok">Ready</span>
+            </div>
+          </div>
+
+          <div class="ctl-group">
+            <div class="ctl-title">Quick Actions</div>
+            <div class="ctl-row triple">
+              <input id="serviceInput" class="ctl-input" value="redis" placeholder="service" />
+              <button id="logsBtn" class="ctl-btn neutral">query_logs</button>
+              <button id="metricsBtn" class="ctl-btn neutral">query_metrics</button>
+            </div>
+            <div class="ctl-row triple">
+              <input id="diagService" class="ctl-input" value="redis" placeholder="suspected_service" />
+              <input id="diagCause" class="ctl-input" value="memory_leak" placeholder="suspected_cause" />
+              <button id="diagBtn" class="ctl-btn neutral">submit_diagnosis</button>
+            </div>
+            <div class="ctl-row triple">
+              <input id="playbookInput" class="ctl-input" value="restart_redis" placeholder="playbook_id" />
+              <input id="teamInput" class="ctl-input" value="infrastructure" placeholder="team" />
+              <button id="remediateBtn" class="ctl-btn neutral">apply_remediation</button>
+            </div>
+            <div class="ctl-row triple">
+              <button id="escalateBtn" class="ctl-btn warn">escalate</button>
+              <button id="closeBtn" class="ctl-btn warn">close_incident</button>
+              <button id="postmortemBtn" class="ctl-btn primary">submit_postmortem</button>
+            </div>
+          </div>
+
+          <div class="ctl-group">
+            <div class="ctl-title">Postmortem Builder</div>
+            <div class="ctl-row single">
+              <input id="pmRootCause" class="ctl-input" value="memory_leak" placeholder="root_cause" />
+            </div>
+            <div class="ctl-row single">
+              <input id="pmAffected" class="ctl-input" value="redis,app-service,api-gateway" placeholder="affected_services (comma-separated)" />
+            </div>
+            <div class="ctl-row">
+              <textarea id="pmTimeline" class="ctl-textarea" placeholder="One timeline step per line">t=0: critical alert fired
+t=1: queried root service logs
+t=2: diagnosis submitted
+t=3: remediation applied
+t=4: service health recovered
+t=5: incident validated</textarea>
+              <textarea id="pmPrevention" class="ctl-textarea" placeholder="One prevention step per line">redis_memory_alert
+canary_deploy
+capacity_planning</textarea>
+            </div>
+          </div>
+
+          <div class="ctl-group">
+            <div class="ctl-title">Raw Action Payload</div>
+            <div class="ctl-row">
+              <select id="rawActionType" class="ctl-select">
+                <option value="query_logs">query_logs</option>
+                <option value="query_metrics">query_metrics</option>
+                <option value="submit_diagnosis">submit_diagnosis</option>
+                <option value="apply_remediation">apply_remediation</option>
+                <option value="escalate">escalate</option>
+                <option value="submit_postmortem">submit_postmortem</option>
+                <option value="close_incident">close_incident</option>
+              </select>
+              <button id="rawSendBtn" class="ctl-btn primary">Send Raw Action</button>
+            </div>
+            <div class="ctl-row single">
+              <textarea id="rawPayload" class="ctl-textarea" placeholder='{"service":"redis"}'>{"service":"redis"}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="output-card">
+            <div class="output-head">Episode Snapshot</div>
+            <div class="output-body" id="messagePane">No observation yet. Click Reset Episode to start.</div>
+          </div>
+
+          <div class="kv-grid">
+            <div class="kv"><div class="kv-k">Step</div><div class="kv-v" id="kvStep">-</div></div>
+            <div class="kv"><div class="kv-k">Done</div><div class="kv-v" id="kvDone">-</div></div>
+            <div class="kv"><div class="kv-k">Reward</div><div class="kv-v" id="kvReward">-</div></div>
+            <div class="kv"><div class="kv-k">Cum Reward</div><div class="kv-v" id="kvCum">-</div></div>
+          </div>
+
+          <div class="output-card">
+            <div class="output-head">Available Playbooks</div>
+            <div class="output-body" id="playbookPane">-</div>
+          </div>
+
+          <div class="output-card">
+            <div class="output-head">Alerts</div>
+            <div class="output-body" id="alertsPane">-</div>
+          </div>
+
+          <div class="output-card">
+            <div class="output-head">Recent Logs</div>
+            <div class="output-body" id="logsPane">-</div>
+          </div>
+
+          <div class="output-card">
+            <div class="output-head">Metrics + Dependency Graph</div>
+            <div class="output-body" id="metricsPane">-</div>
+          </div>
+
+          <div class="output-card">
+            <div class="output-head">Raw API Response</div>
+            <div class="output-body" id="rawPane">-</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- FEATURES -->
@@ -941,6 +1284,264 @@
   </footer>
 
   <script>
+    // ── INTERACTIVE API CLIENT ───────────────────────────────────────────────────
+    const taskSelect = document.getElementById('taskSelect');
+    const resetBtn = document.getElementById('resetBtn');
+    const stateBtn = document.getElementById('stateBtn');
+    const uiStatus = document.getElementById('uiStatus');
+
+    const messagePane = document.getElementById('messagePane');
+    const playbookPane = document.getElementById('playbookPane');
+    const alertsPane = document.getElementById('alertsPane');
+    const logsPane = document.getElementById('logsPane');
+    const metricsPane = document.getElementById('metricsPane');
+    const rawPane = document.getElementById('rawPane');
+
+    const kvStep = document.getElementById('kvStep');
+    const kvDone = document.getElementById('kvDone');
+    const kvReward = document.getElementById('kvReward');
+    const kvCum = document.getElementById('kvCum');
+
+    let latestObs = null;
+    let latestState = null;
+
+    function setStatus(text, ok = true) {
+      uiStatus.textContent = text;
+      uiStatus.className = `status-inline ${ok ? 'status-ok' : 'status-err'}`;
+    }
+
+    async function postJson(url, payload) {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        throw new Error(data.detail || `${resp.status} ${resp.statusText}`);
+      }
+      return data;
+    }
+
+    async function getJson(url) {
+      const resp = await fetch(url);
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        throw new Error(data.detail || `${resp.status} ${resp.statusText}`);
+      }
+      return data;
+    }
+
+    function linesToList(v) {
+      return v
+        .split('\n')
+        .map(x => x.trim())
+        .filter(Boolean);
+    }
+
+    function csvToList(v) {
+      return v
+        .split(',')
+        .map(x => x.trim())
+        .filter(Boolean);
+    }
+
+    function pretty(obj) {
+      try {
+        return JSON.stringify(obj, null, 2);
+      } catch {
+        return String(obj);
+      }
+    }
+
+    function renderPlaybooks(pbs) {
+      if (!pbs || !pbs.length) {
+        playbookPane.textContent = '-';
+        return;
+      }
+      playbookPane.innerHTML = `<div class="pill-wrap">${pbs.map(pb => `<span class="pill">${pb}</span>`).join('')}</div>`;
+    }
+
+    function renderAlerts(alerts) {
+      if (!alerts || !alerts.length) {
+        alertsPane.textContent = 'No alerts';
+        return;
+      }
+      alertsPane.textContent = alerts
+        .slice(0, 20)
+        .map(a => `[${(a.severity || '').toUpperCase()}] t=${a.timestamp} ${a.service}: ${a.message}`)
+        .join('\n');
+    }
+
+    function renderLogs(logs) {
+      if (!logs || !logs.length) {
+        logsPane.textContent = 'No logs queried yet';
+        return;
+      }
+      logsPane.textContent = logs
+        .slice(-30)
+        .map(l => `[t=${l.t}] [${(l.level || '').toUpperCase()}] ${l.service}: ${l.msg}`)
+        .join('\n');
+    }
+
+    function buildGraphFromObservation(obs) {
+      const g = obs?.dependency_graph || {};
+      const svcSet = new Set();
+      Object.entries(g).forEach(([svc, deps]) => {
+        svcSet.add(svc);
+        (deps || []).forEach(dep => svcSet.add(dep));
+      });
+      const svcs = Array.from(svcSet);
+      if (!svcs.length) {
+        return;
+      }
+
+      const healthByService = {};
+      const metrics = obs.metrics || {};
+      Object.keys(metrics).forEach(k => {
+        if (k.endsWith('_health')) {
+          const svc = k.slice(0, -7);
+          healthByService[svc] = Number(metrics[k]);
+        }
+      });
+
+      const count = svcs.length;
+      nodes = svcs.map((svc, i) => {
+        const angle = (Math.PI * 2 * i) / Math.max(count, 1);
+        const health = Number.isFinite(healthByService[svc]) ? healthByService[svc] : 1;
+        const fault = health < 0.75;
+        const color = fault ? '#dc2626' : '#059669';
+        return {
+          id: svc,
+          x: 0.5 + Math.cos(angle) * 0.33,
+          y: 0.5 + Math.sin(angle) * 0.28,
+          color,
+          fault,
+          r: fault ? 13 : 11,
+        };
+      });
+
+      const e = [];
+      Object.entries(g).forEach(([svc, deps]) => {
+        (deps || []).forEach(dep => {
+          e.push([svc, dep]);
+        });
+      });
+      edges = e.length ? e : edges;
+      packets = edges.map(() => ({ t: Math.random(), speed: 0.003 + Math.random() * 0.003 }));
+    }
+
+    function renderObservation(obs, meta = {}) {
+      latestObs = obs || null;
+      if (!obs) {
+        return;
+      }
+      const inc = obs.incident_state || {};
+      const md = obs.metadata || {};
+
+      messagePane.textContent = `${obs.message || ''}\n\nresolved=${inc.resolved} diagnosed=${inc.diagnosed} remediated=${inc.remediated}`;
+      kvStep.textContent = String(inc.step ?? '-');
+      kvDone.textContent = String(Boolean(obs.done));
+      kvReward.textContent = typeof meta.reward === 'number' ? meta.reward.toFixed(4) : '-';
+      kvCum.textContent = typeof md.cumulative_reward === 'number' ? md.cumulative_reward.toFixed(4) : '-';
+
+      renderPlaybooks(obs.available_playbooks || []);
+      renderAlerts(obs.alerts || []);
+      renderLogs(obs.logs || []);
+      metricsPane.textContent = pretty({ metrics: obs.metrics || {}, dependency_graph: obs.dependency_graph || {} });
+      buildGraphFromObservation(obs);
+    }
+
+    async function doReset() {
+      setStatus('Resetting...', true);
+      try {
+        const payload = { task_id: taskSelect.value };
+        const data = await postJson('/reset', payload);
+        rawPane.textContent = pretty(data);
+        const obs = data.observation || data;
+        renderObservation(obs, { reward: data.reward });
+        setStatus('Episode reset complete', true);
+      } catch (err) {
+        setStatus(`Reset failed: ${err.message}`, false);
+      }
+    }
+
+    async function doState() {
+      setStatus('Fetching state...', true);
+      try {
+        latestState = await getJson('/state');
+        rawPane.textContent = pretty(latestState);
+        setStatus('State fetched', true);
+      } catch (err) {
+        setStatus(`State failed: ${err.message}`, false);
+      }
+    }
+
+    async function doStep(actionType, payload) {
+      setStatus(`Sending ${actionType}...`, true);
+      try {
+        const data = await postJson('/step', { action_type: actionType, payload });
+        rawPane.textContent = pretty(data);
+        const obs = data.observation || data;
+        renderObservation(obs, { reward: data.reward });
+        if (obs?.done) {
+          setStatus(`Episode finished with reward=${(data.reward ?? 0).toFixed(4)}`, true);
+        } else {
+          setStatus(`${actionType} sent`, true);
+        }
+      } catch (err) {
+        setStatus(`Step failed: ${err.message}`, false);
+      }
+    }
+
+    document.getElementById('logsBtn').addEventListener('click', () => {
+      doStep('query_logs', { service: document.getElementById('serviceInput').value.trim() });
+    });
+
+    document.getElementById('metricsBtn').addEventListener('click', () => {
+      doStep('query_metrics', { service: document.getElementById('serviceInput').value.trim() });
+    });
+
+    document.getElementById('diagBtn').addEventListener('click', () => {
+      doStep('submit_diagnosis', {
+        suspected_service: document.getElementById('diagService').value.trim(),
+        suspected_cause: document.getElementById('diagCause').value.trim(),
+      });
+    });
+
+    document.getElementById('remediateBtn').addEventListener('click', () => {
+      doStep('apply_remediation', { playbook_id: document.getElementById('playbookInput').value.trim() });
+    });
+
+    document.getElementById('escalateBtn').addEventListener('click', () => {
+      doStep('escalate', { team: document.getElementById('teamInput').value.trim() || 'infrastructure' });
+    });
+
+    document.getElementById('closeBtn').addEventListener('click', () => {
+      doStep('close_incident', {});
+    });
+
+    document.getElementById('postmortemBtn').addEventListener('click', () => {
+      doStep('submit_postmortem', {
+        root_cause: document.getElementById('pmRootCause').value.trim(),
+        affected_services: csvToList(document.getElementById('pmAffected').value),
+        timeline_steps: linesToList(document.getElementById('pmTimeline').value),
+        prevention_steps: linesToList(document.getElementById('pmPrevention').value),
+      });
+    });
+
+    document.getElementById('rawSendBtn').addEventListener('click', () => {
+      try {
+        const payload = JSON.parse(document.getElementById('rawPayload').value || '{}');
+        doStep(document.getElementById('rawActionType').value, payload);
+      } catch (err) {
+        setStatus(`Raw JSON parse error: ${err.message}`, false);
+      }
+    });
+
+    resetBtn.addEventListener('click', doReset);
+    stateBtn.addEventListener('click', doState);
+
     // ── TOPOLOGY CANVAS ──────────────────────────────────────────────────────────
     const canvas = document.getElementById('topoCanvas');
     const ctx = canvas.getContext('2d');
@@ -958,7 +1559,7 @@
     resize();
     window.addEventListener('resize', () => { resize(); });
 
-    const nodes = [
+    let nodes = [
       { id: 'api-gateway', x: 0.50, y: 0.18, color: '#dc2626', fault: true, r: 14 },
       { id: 'auth-service', x: 0.30, y: 0.45, color: '#d97706', fault: false, r: 12 },
       { id: 'app-service', x: 0.70, y: 0.45, color: '#2563eb', fault: false, r: 12 },
@@ -967,7 +1568,7 @@
       { id: 'config-service', x: 0.82, y: 0.75, color: '#7c3aed', fault: false, r: 11 },
     ];
 
-    const edges = [
+    let edges = [
       ['api-gateway', 'auth-service'],
       ['api-gateway', 'app-service'],
       ['auth-service', 'redis'],
@@ -976,7 +1577,7 @@
       ['app-service', 'config-service'],
     ];
 
-    const packets = edges.map(() => ({ t: Math.random(), speed: 0.003 + Math.random() * 0.003 }));
+    let packets = edges.map(() => ({ t: Math.random(), speed: 0.003 + Math.random() * 0.003 }));
 
     let time = 0;
     function draw() {
@@ -1000,6 +1601,7 @@
       edges.forEach(([from, to], i) => {
         const a = nodes.find(n => n.id === from);
         const b = nodes.find(n => n.id === to);
+        if (!a || !b) return;
         const ax = a.x * W, ay = a.y * H;
         const bx = b.x * W, by = b.y * H;
         const isFault = a.fault || b.fault;
