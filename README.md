@@ -1,10 +1,3 @@
----
-title: SRE Gym
-colorFrom: blue
-colorTo: purple
-sdk: docker
-app_port: 8000
----
 
 <div align="center">
   <img src="https://img.shields.io/badge/OpenEnv-Compatible-blue.svg?style=for-the-badge" />
