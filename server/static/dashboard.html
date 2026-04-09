@@ -913,145 +913,6 @@
       <canvas id="topoCanvas"></canvas>
     </div>
 
-    <!-- INTERACTIVE CONSOLE -->
-    <div class="section-header">
-      <div class="section-title">Interactive Incident Console</div>
-      <div class="section-tag">Live simulation telemetry via /reset and /step</div>
-    </div>
-    <div class="interactive-shell">
-      <div class="interactive-grid">
-        <div>
-          <div class="ctl-group">
-            <div class="ctl-title">Session Control</div>
-            <div class="ctl-row">
-              <select id="taskSelect" class="ctl-select">
-                <option value="task_easy_1">task_easy_1</option>
-                <option value="task_easy_2">task_easy_2</option>
-                <option value="task_easy_3">task_easy_3</option>
-                <option value="task_easy_4">task_easy_4</option>
-                <option value="task_medium_1">task_medium_1</option>
-                <option value="task_medium_2">task_medium_2</option>
-                <option value="task_medium_3">task_medium_3</option>
-                <option value="task_medium_4">task_medium_4</option>
-                <option value="task_hard_1">task_hard_1</option>
-                <option value="task_hard_2">task_hard_2</option>
-                <option value="task_hard_3">task_hard_3</option>
-                <option value="task_hard_4">task_hard_4</option>
-              </select>
-              <button id="resetBtn" class="ctl-btn primary">Reset Episode</button>
-            </div>
-            <div class="ctl-row">
-              <button id="stateBtn" class="ctl-btn neutral">Fetch State</button>
-              <span id="uiStatus" class="status-inline status-ok">Ready</span>
-            </div>
-          </div>
-
-          <div class="ctl-group">
-            <div class="ctl-title">Quick Actions</div>
-            <div class="ctl-row triple">
-              <input id="serviceInput" class="ctl-input" value="redis" placeholder="service" />
-              <button id="logsBtn" class="ctl-btn neutral">query_logs</button>
-              <button id="metricsBtn" class="ctl-btn neutral">query_metrics</button>
-            </div>
-            <div class="ctl-row triple">
-              <input id="diagService" class="ctl-input" value="redis" placeholder="suspected_service" />
-              <input id="diagCause" class="ctl-input" value="memory_leak" placeholder="suspected_cause" />
-              <button id="diagBtn" class="ctl-btn neutral">submit_diagnosis</button>
-            </div>
-            <div class="ctl-row triple">
-              <input id="playbookInput" class="ctl-input" value="restart_redis" placeholder="playbook_id" />
-              <input id="teamInput" class="ctl-input" value="infrastructure" placeholder="team" />
-              <button id="remediateBtn" class="ctl-btn neutral">apply_remediation</button>
-            </div>
-            <div class="ctl-row triple">
-              <button id="escalateBtn" class="ctl-btn warn">escalate</button>
-              <button id="closeBtn" class="ctl-btn warn">close_incident</button>
-              <button id="postmortemBtn" class="ctl-btn primary">submit_postmortem</button>
-            </div>
-          </div>
-
-          <div class="ctl-group">
-            <div class="ctl-title">Postmortem Builder</div>
-            <div class="ctl-row single">
-              <input id="pmRootCause" class="ctl-input" value="memory_leak" placeholder="root_cause" />
-            </div>
-            <div class="ctl-row single">
-              <input id="pmAffected" class="ctl-input" value="redis,app-service,api-gateway" placeholder="affected_services (comma-separated)" />
-            </div>
-            <div class="ctl-row">
-              <textarea id="pmTimeline" class="ctl-textarea" placeholder="One timeline step per line">t=0: critical alert fired
-t=1: queried root service logs
-t=2: diagnosis submitted
-t=3: remediation applied
-t=4: service health recovered
-t=5: incident validated</textarea>
-              <textarea id="pmPrevention" class="ctl-textarea" placeholder="One prevention step per line">redis_memory_alert
-canary_deploy
-capacity_planning</textarea>
-            </div>
-          </div>
-
-          <div class="ctl-group">
-            <div class="ctl-title">Raw Action Payload</div>
-            <div class="ctl-row">
-              <select id="rawActionType" class="ctl-select">
-                <option value="query_logs">query_logs</option>
-                <option value="query_metrics">query_metrics</option>
-                <option value="submit_diagnosis">submit_diagnosis</option>
-                <option value="apply_remediation">apply_remediation</option>
-                <option value="escalate">escalate</option>
-                <option value="submit_postmortem">submit_postmortem</option>
-                <option value="close_incident">close_incident</option>
-              </select>
-              <button id="rawSendBtn" class="ctl-btn primary">Send Raw Action</button>
-            </div>
-            <div class="ctl-row single">
-              <textarea id="rawPayload" class="ctl-textarea" placeholder='{"service":"redis"}'>{"service":"redis"}</textarea>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="output-card">
-            <div class="output-head">Episode Snapshot</div>
-            <div class="output-body" id="messagePane">No observation yet. Click Reset Episode to start.</div>
-          </div>
-
-          <div class="kv-grid">
-            <div class="kv"><div class="kv-k">Step</div><div class="kv-v" id="kvStep">-</div></div>
-            <div class="kv"><div class="kv-k">Done</div><div class="kv-v" id="kvDone">-</div></div>
-            <div class="kv"><div class="kv-k">Reward</div><div class="kv-v" id="kvReward">-</div></div>
-            <div class="kv"><div class="kv-k">Cum Reward</div><div class="kv-v" id="kvCum">-</div></div>
-          </div>
-
-          <div class="output-card">
-            <div class="output-head">Available Playbooks</div>
-            <div class="output-body" id="playbookPane">-</div>
-          </div>
-
-          <div class="output-card">
-            <div class="output-head">Alerts</div>
-            <div class="output-body" id="alertsPane">-</div>
-          </div>
-
-          <div class="output-card">
-            <div class="output-head">Recent Logs</div>
-            <div class="output-body" id="logsPane">-</div>
-          </div>
-
-          <div class="output-card">
-            <div class="output-head">Metrics + Dependency Graph</div>
-            <div class="output-body" id="metricsPane">-</div>
-          </div>
-
-          <div class="output-card">
-            <div class="output-head">Raw API Response</div>
-            <div class="output-body" id="rawPane">-</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- FEATURES -->
     <div class="section-header">
       <div class="section-title">Core Capabilities</div>
@@ -1269,6 +1130,145 @@ capacity_planning</textarea>
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- INTERACTIVE CONSOLE -->
+    <div class="section-header">
+      <div class="section-title">Interactive Incident Console</div>
+      <div class="section-tag">Live simulation telemetry via /reset and /step</div>
+    </div>
+    <div class="interactive-shell">
+      <div class="interactive-grid">
+        <div>
+          <div class="ctl-group">
+            <div class="ctl-title">Session Control</div>
+            <div class="ctl-row">
+              <select id="taskSelect" class="ctl-select">
+                <option value="task_easy_1">task_easy_1</option>
+                <option value="task_easy_2">task_easy_2</option>
+                <option value="task_easy_3">task_easy_3</option>
+                <option value="task_easy_4">task_easy_4</option>
+                <option value="task_medium_1">task_medium_1</option>
+                <option value="task_medium_2">task_medium_2</option>
+                <option value="task_medium_3">task_medium_3</option>
+                <option value="task_medium_4">task_medium_4</option>
+                <option value="task_hard_1">task_hard_1</option>
+                <option value="task_hard_2">task_hard_2</option>
+                <option value="task_hard_3">task_hard_3</option>
+                <option value="task_hard_4">task_hard_4</option>
+              </select>
+              <button id="resetBtn" class="ctl-btn primary">Reset Episode</button>
+            </div>
+            <div class="ctl-row">
+              <button id="stateBtn" class="ctl-btn neutral">Fetch State</button>
+              <span id="uiStatus" class="status-inline status-ok">Ready</span>
+            </div>
+          </div>
+
+          <div class="ctl-group">
+            <div class="ctl-title">Quick Actions</div>
+            <div class="ctl-row triple">
+              <input id="serviceInput" class="ctl-input" value="redis" placeholder="service" />
+              <button id="logsBtn" class="ctl-btn neutral">query_logs</button>
+              <button id="metricsBtn" class="ctl-btn neutral">query_metrics</button>
+            </div>
+            <div class="ctl-row triple">
+              <input id="diagService" class="ctl-input" value="redis" placeholder="suspected_service" />
+              <input id="diagCause" class="ctl-input" value="memory_leak" placeholder="suspected_cause" />
+              <button id="diagBtn" class="ctl-btn neutral">submit_diagnosis</button>
+            </div>
+            <div class="ctl-row triple">
+              <input id="playbookInput" class="ctl-input" value="restart_redis" placeholder="playbook_id" />
+              <input id="teamInput" class="ctl-input" value="infrastructure" placeholder="team" />
+              <button id="remediateBtn" class="ctl-btn neutral">apply_remediation</button>
+            </div>
+            <div class="ctl-row triple">
+              <button id="escalateBtn" class="ctl-btn warn">escalate</button>
+              <button id="closeBtn" class="ctl-btn warn">close_incident</button>
+              <button id="postmortemBtn" class="ctl-btn primary">submit_postmortem</button>
+            </div>
+          </div>
+
+          <div class="ctl-group">
+            <div class="ctl-title">Postmortem Builder</div>
+            <div class="ctl-row single">
+              <input id="pmRootCause" class="ctl-input" value="memory_leak" placeholder="root_cause" />
+            </div>
+            <div class="ctl-row single">
+              <input id="pmAffected" class="ctl-input" value="redis,app-service,api-gateway" placeholder="affected_services (comma-separated)" />
+            </div>
+            <div class="ctl-row">
+              <textarea id="pmTimeline" class="ctl-textarea" placeholder="One timeline step per line">t=0: critical alert fired
+t=1: queried root service logs
+t=2: diagnosis submitted
+t=3: remediation applied
+t=4: service health recovered
+t=5: incident validated</textarea>
+              <textarea id="pmPrevention" class="ctl-textarea" placeholder="One prevention step per line">redis_memory_alert
+canary_deploy
+capacity_planning</textarea>
+            </div>
+          </div>
+
+          <div class="ctl-group">
+            <div class="ctl-title">Raw Action Payload</div>
+            <div class="ctl-row">
+              <select id="rawActionType" class="ctl-select">
+                <option value="query_logs">query_logs</option>
+                <option value="query_metrics">query_metrics</option>
+                <option value="submit_diagnosis">submit_diagnosis</option>
+                <option value="apply_remediation">apply_remediation</option>
+                <option value="escalate">escalate</option>
+                <option value="submit_postmortem">submit_postmortem</option>
+                <option value="close_incident">close_incident</option>
+              </select>
+              <button id="rawSendBtn" class="ctl-btn primary">Send Raw Action</button>
+            </div>
+            <div class="ctl-row single">
+              <textarea id="rawPayload" class="ctl-textarea" placeholder='{"service":"redis"}'>{"service":"redis"}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="output-card">
+            <div class="output-head">Episode Snapshot</div>
+            <div class="output-body" id="messagePane">No observation yet. Click Reset Episode to start.</div>
+          </div>
+
+          <div class="kv-grid">
+            <div class="kv"><div class="kv-k">Step</div><div class="kv-v" id="kvStep">-</div></div>
+            <div class="kv"><div class="kv-k">Done</div><div class="kv-v" id="kvDone">-</div></div>
+            <div class="kv"><div class="kv-k">Reward</div><div class="kv-v" id="kvReward">-</div></div>
+            <div class="kv"><div class="kv-k">Cum Reward</div><div class="kv-v" id="kvCum">-</div></div>
+          </div>
+
+          <div class="output-card">
+            <div class="output-head">Available Playbooks</div>
+            <div class="output-body" id="playbookPane">-</div>
+          </div>
+
+          <div class="output-card">
+            <div class="output-head">Alerts</div>
+            <div class="output-body" id="alertsPane">-</div>
+          </div>
+
+          <div class="output-card">
+            <div class="output-head">Recent Logs</div>
+            <div class="output-body" id="logsPane">-</div>
+          </div>
+
+          <div class="output-card">
+            <div class="output-head">Metrics + Dependency Graph</div>
+            <div class="output-body" id="metricsPane">-</div>
+          </div>
+
+          <div class="output-card">
+            <div class="output-head">Raw API Response</div>
+            <div class="output-body" id="rawPane">-</div>
+          </div>
+        </div>
       </div>
     </div>
 
