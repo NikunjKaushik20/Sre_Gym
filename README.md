@@ -1,3 +1,12 @@
+---
+title: SRE Gym
+emoji: "🚨"
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 8000
+pinned: false
+---
 
 <div align="center">
   <img src="https://img.shields.io/badge/OpenEnv-Compatible-blue.svg?style=for-the-badge" />
