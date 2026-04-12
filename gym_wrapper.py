@@ -96,8 +96,10 @@ class SREGymEnv(gym.Env):
         d = raw.model_dump()
         self._update_guesses(d)
         obs = self._vectorize(d)
-        reward = float(d.get("reward", 0.0))
         done = bool(d.get("done", False))
+        # Mask intermediate shaping rewards. PPO only receives the final strictly clamped score.
+        raw_r = float(d.get("reward", 0.0))
+        reward = raw_r if done else 0.0
         truncated = False
         info = {
             "step": self._env._state.step_count,

@@ -48,12 +48,11 @@ No existing RL benchmark measures this. Most simulate isolated faults or use LLM
 | Agent | Easy | Medium | Hard | Overall |
 |---|:---:|:---:|:---:|:---:|
 | 🥇 Graph-aware BFS agent (`agent_graph.py`) | **0.878** | **0.864** | **0.886** | **0.876** |
-| 🥈 PPO Agent (trained, 100K steps)* | 0.82  | — | — | — |
+| 🥈 PPO Agent (trained, 30K steps) | 0.643 | — | — | — |
 | 🤖 gpt-4o-mini | 0.472 | 0.514 | 0.508 | 0.498 |
 | 🔧 Deterministic keyword baseline | 0.38  | 0.21  | 0.09  | 0.23  |
-| 🎲 Random agent | 0.269 | 0.08  | 0.04  | 0.08  |
+| 🎲 Random agent | 0.134 | 0.08  | 0.04  | 0.08  |
 
-> *PPO episodic reward scaled for 0-1 comparison.
 > **Note on blanks:** The PPO agent is only trained and evaluated on Easy tasks. Medium/Hard tasks require generating a free-text unstructured postmortem, which is designed specifically to test LLMs, not standard discrete-action RL agents.
 > The topological rule-based BFS agent achieves 0.88 overall, demonstrating that perfect performance requires graph-awareness rather than simple semantic matching (where LLMs excel but fail here).
 
