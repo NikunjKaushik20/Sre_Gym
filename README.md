@@ -37,13 +37,7 @@ No existing RL benchmark measures this. Most simulate isolated faults or use LLM
 
 ---
 
-## PPO Training Results
-
-![PPO Training Curve](reward_curve.png)
-
-> PPO agent (stable-baselines3) trained for 100K steps on Easy tasks. Evaluated every 5K steps. Three baselines shown: random agent, deterministic rule-based, and gpt-4o-mini. The clear upward trend in episodic reward confirms the environment provides dense, learnable signals rather than just sparse terminal evaluations.
-
-### Multi-Model Leaderboard
+## Multi-Model Leaderboard
 
 | Agent | Easy | Medium | Hard | Overall |
 |---|:---:|:---:|:---:|:---:|
