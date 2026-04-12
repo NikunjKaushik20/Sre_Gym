@@ -56,7 +56,7 @@ No existing RL benchmark measures this. Most simulate isolated faults or use LLM
 
 **Deterministic grading is the most important design choice here.**
 
-Every other SRE environment in this class uses an LLM judge. LLM judges are:
+Most agentic environments rely heavily on LLM judges. LLM evaluators are:
 - Non-reproducible (same input → different score on re-run)
 - Expensive ($0.01–$0.05 per evaluation)
 - Prompt-sensitive (rephrasing changes the score)
@@ -64,16 +64,15 @@ Every other SRE environment in this class uses an LLM judge. LLM judges are:
 
 SRE-Gym graders run in **< 1ms**, produce **identical scores on identical inputs**, require **no API keys**, and use **fuzzy-match with a 0.92 SequenceMatcher threshold** — strict enough that keyword stuffing yields zero credit.
 
-| Mechanic | SRE-Gym | kube-sre-gym | Vignesh/SRE-Gym | nandanthecoder |
-|---|:---:|:---:|:---:|:---:|
-| Deterministic graders | ✅ | ❌ LLM judge | ❌ LLM judge | ✅ simple |
-| Dependency graph traversal | ✅ | ❌ | ❌ | ❌ |
-| `submit_postmortem` mechanic | ✅ | ❌ | ❌ | ❌ |
-| Red herring injection | ✅ | ❌ | ✅ | ❌ |
-| Procedural generation | ✅ | ❌ | ❌ | ❌ |
-| Gymnasium wrapper + PPO | ✅ | ❌ | ❌ | ✅ PPO |
-| MTTR-based scoring | ✅ | ❌ | ❌ | ❌ |
-| Partial observability | ✅ | ❌ | ❌ | ❌ |
+### Core Mechanics
+- **Deterministic graders**: No LLM in the loop for evaluation.
+- **Dependency graph traversal**: Agents must navigate microservice topologies, not just text.
+- **`submit_postmortem` mechanic**: The ultimate test of incident comprehension.
+- **Red herring injection**: Tests the agent's ability to isolate causal chains.
+- **Procedural generation**: Infinite variations of failure scenarios.
+- **Gymnasium wrapper + PPO**: Fully compatible with standard RL libraries.
+- **MTTR-based scoring**: Emulates real-world SLA pressures.
+- **Partial observability**: Agents only see what they explicitly query.
 
 ---
 
