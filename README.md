@@ -54,6 +54,7 @@ No existing RL benchmark measures this. Most simulate isolated faults or use LLM
 | 🎲 Random agent | 0.269 | 0.08  | 0.04  | 0.08  |
 
 > *PPO episodic reward scaled for 0-1 comparison.
+> **Note on blanks:** The PPO agent is only trained and evaluated on Easy tasks. Medium/Hard tasks require generating a free-text unstructured postmortem, which is designed specifically to test LLMs, not standard discrete-action RL agents.
 > The topological rule-based BFS agent achieves 0.88 overall, demonstrating that perfect performance requires graph-awareness rather than simple semantic matching (where LLMs excel but fail here).
 
 ---
