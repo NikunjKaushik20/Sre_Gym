@@ -263,10 +263,12 @@ submit_postmortem()
 
 ## Running Tests
 ```bash
+
 pip install -e ".[dev]"
 pytest tests/ -v
 python agent_graph.py        # integration smoke test
 python gym_wrapper.py        # gymnasium spec check
+
 ```
 
 ## License
